@@ -1,0 +1,6 @@
+.agents/
+.claude/
+.cursor/
+.devin/
+node_modules/
+package-lock.json
