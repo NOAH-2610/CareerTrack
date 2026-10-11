@@ -1,32 +1,12 @@
 import { Router } from "express";
-import prisma from "../lib/prisma";
+import { getApiHealth, getDatabaseHealth } from "../controllers/health.controller";
 
 const router = Router();
 
 //Basic API health check
-router.get('/', (_req, res) => {
-    res.json({
-        message: "CareerTrack API is running",
-    });
-});
+router.get("/", getApiHealth);
 
 //Database health check
-router.get('/db', async (_req, res) => {
-    try {
-        await prisma.$queryRaw`SELECT 1`;
-
-        res.status(200).json({
-            status: "ok",
-            database: "connected",
-        });
-    } catch (error) {
-        console.error("Database health check failed", error);
-
-        res.status(503).json({
-            status: "error",
-            database: "disconnected",
-        });
-    }
-});
+router.get("/db", getDatabaseHealth);
 
 export default router;
