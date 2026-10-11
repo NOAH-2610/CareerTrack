@@ -3,6 +3,8 @@
 # ================================
 
 node_modules/
+frontend/node_modules/
+backend/node_modules/
 
 # ================================
 # Environment variables / secrets
@@ -12,12 +14,23 @@ node_modules/
 .env.*
 !.env.example
 
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
 # ================================
 # Build output
 # ================================
 
 dist/
 dist-ssr/
+
+frontend/dist/
+backend/dist/
 
 # ================================
 # Logs
@@ -60,6 +73,7 @@ lerna-debug.log*
 # ================================
 
 .DS_Store
+Thumbs.db
 guide/
 
 # ================================
