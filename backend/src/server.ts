@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import prisma from "./lib/prisma";
+import healthRoutes from "./routes/health.routes";
 
 dotenv.config();
 
@@ -10,31 +11,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Basic API health check
-app.get("/", (_req, res) => {
-  res.json({
-    message: "CareerTrack API is running",
-  });
-});
-
-// Database health check
-app.get("/health/db", async (_req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-
-    res.status(200).json({
-      status: "ok",
-      database: "connected",
-    });
-  } catch (error) {
-    console.error("Database health check failed:", error);
-
-    res.status(503).json({
-      status: "error",
-      database: "disconnected",
-    });
-  }
-});
+//Health check routes
+app.use("/", healthRoutes);
+app.use("/health", healthRoutes);
 
 const PORT = process.env.PORT || 5000;
 
