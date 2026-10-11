@@ -5,3 +5,111 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum ApplicationStatus {
+  WISHLIST
+  APPLIED
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum InterviewType {
+  PHONE
+  TECHNICAL
+  HR
+  MANAGERIAL
+  FINAL
+  OTHER
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  companies    Company[]
+  applications Application[]
+}
+
+model Company {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  name      String
+  website   String?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  applications Application[]
+
+  @@index([userId])
+}
+
+model Application {
+  id        Int               @id @default(autoincrement())
+  userId    Int
+  companyId Int
+  position  String
+  jobUrl    String?
+  location  String?
+  jobType   JobType
+  salaryMin Int?
+  salaryMax Int?
+  status    ApplicationStatus @default(WISHLIST)
+  appliedAt DateTime?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id])
+  company    Company     @relation(fields: [companyId], references: [id])
+  notes      Note[]
+  interviews Interview[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([userId, status])
+}
+
+model Note {
+  id            Int      @id @default(autoincrement())
+  applicationId Int
+  content       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@index([applicationId])
+}
+
+model Interview {
+  id            Int           @id @default(autoincrement())
+  applicationId Int
+  type          InterviewType
+  scheduledAt   DateTime
+  location      String?
+  meetingUrl    String?
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id])
+
+  @@index([applicationId])
+  @@index([scheduledAt])
+}
