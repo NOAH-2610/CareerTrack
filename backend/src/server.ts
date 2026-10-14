@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import prisma from "./lib/prisma";
 import healthRoutes from "./routes/health.routes";
+import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
 
@@ -14,6 +15,8 @@ app.use(express.json());
 //Health check routes
 app.use("/", healthRoutes);
 app.use("/health", healthRoutes);
+
+app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
