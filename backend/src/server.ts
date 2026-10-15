@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import prisma from "./lib/prisma";
 import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
+import companyRoutes from "./routes/company.routes";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use("/", healthRoutes);
 app.use("/health", healthRoutes);
 
 app.use("/auth", authRoutes);
+app.use("/companies", companyRoutes);
 
 const PORT = process.env.PORT || 5000;
 
