@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes";
 import companyRoutes from "./routes/company.routes";
 import applicationRoutes from "./routes/application.routes";
 import noteRoutes from "./routes/note.routes";
+import interviewRoutes from "./routes/interview.routes";
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use("/auth", authRoutes);
 app.use("/companies", companyRoutes);
 app.use("/applications", applicationRoutes);
 app.use("/", noteRoutes);
+app.use("/", interviewRoutes);
 
 const PORT = process.env.PORT || 5000;
 
