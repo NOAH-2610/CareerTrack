@@ -56,6 +56,7 @@ export async function createApplication(
 
         if (
             typeof data.companyId !== "number" ||
+            !Number.isSafeInteger(data.companyId) ||
             data.companyId <= 0
         ) {
             res.status(400).json({

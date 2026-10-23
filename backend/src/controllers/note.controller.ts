@@ -140,7 +140,7 @@ export const getNotes = async (
         });
 
         if (!application) {
-            res.status(400).json({ message: "Application not found" });
+            res.status(404).json({ message: "Application not found" });
             return;
         }
 
