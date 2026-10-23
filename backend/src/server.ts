@@ -6,6 +6,7 @@ import healthRoutes from "./routes/health.routes";
 import authRoutes from "./routes/auth.routes";
 import companyRoutes from "./routes/company.routes";
 import applicationRoutes from "./routes/application.routes";
+import noteRoutes from "./routes/note.routes";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use("/health", healthRoutes);
 app.use("/auth", authRoutes);
 app.use("/companies", companyRoutes);
 app.use("/applications", applicationRoutes);
+app.use("/", noteRoutes);
 
 const PORT = process.env.PORT || 5000;
 
