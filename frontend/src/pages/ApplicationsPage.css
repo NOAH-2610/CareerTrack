@@ -1,0 +1,180 @@
+.applications-page {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    padding: 48px 24px;
+}
+
+.applications-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.applications-header h1 {
+    margin: 0 0 8px;
+    color: var(--color-text);
+    font-size: clamp(1.8rem, 5vw, 2.3rem);
+    letter-spacing: -0.04em;
+}
+
+.applications-header p {
+    margin: 0;
+    color: var(--color-muted);
+    line-height: 1.6;
+}
+
+.primary-button,
+.secondary-button {
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 650;
+}
+
+.primary-button {
+    color: white;
+    background: var(--color-primary);
+    border: 0;
+}
+
+.primary-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.secondary-button {
+    color: var(--color-primary);
+    background: white;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+}
+
+.applications-summary {
+    margin-bottom: 16px;
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.applications-list {
+    display: grid;
+    gap: 16px;
+}
+
+.application-card {
+    padding: 22px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgb(23 32 51 / 4%);
+}
+
+.application-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.application-card h2 {
+    margin: 0 0 6px;
+    color: var(--color-text);
+    font-size: 1.1rem;
+}
+
+.application-company {
+    margin: 0;
+    color: var(--color-muted);
+}
+
+.status-badge {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-radius: 20px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.status-offer {
+    background: #ecfdf3;
+    color: #027a48;
+}
+
+.status-rejected,
+.status-withdrawn {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+.status-interview,
+.status-assessment {
+    background: #fff7e6;
+    color: #b54708;
+}
+
+.application-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-top: 20px;
+    color: var(--color-muted);
+    font-size: 0.88rem;
+}
+
+.job-link {
+    display: inline-block;
+    margin-top: 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.applications-message {
+    padding: 36px 24px;
+    text-align: center;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+}
+
+.applications-message p {
+    color: var(--color-muted);
+    line-height: 1.6;
+}
+
+.applications-empty h2 {
+    margin-top: 0;
+    color: var(--color-text);
+}
+
+.applications-error {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+    border-color: #fecdca;
+}
+
+@media (max-width: 600px) {
+    .applications-page {
+        padding: 32px 16px;
+    }
+
+    .applications-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .application-card-header {
+        flex-direction: column;
+    }
+}

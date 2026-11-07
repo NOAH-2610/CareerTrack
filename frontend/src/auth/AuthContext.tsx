@@ -126,6 +126,9 @@ async function verifyStoredSession(): Promise<SessionCheckResult> {
 
 export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(
+        () => sessionStorage.getItem(TOKEN_STORAGE_KEY),
+    );
     const [isLoading, setIsLoading] = useState(true);
     const [authError, setAuthError] = useState<string | null>(null);
 
@@ -144,6 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             setUser(result.user);
+            setToken(sessionStorage.getItem(TOKEN_STORAGE_KEY));
             setAuthError(result.error);
             setIsLoading(false);
         }
@@ -166,6 +170,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const result = await verifyStoredSession();
 
             setUser(result.user);
+            setToken(sessionStorage.getItem(TOKEN_STORAGE_KEY));
             setAuthError(result.error);
         } finally {
             setIsLoading(false);
@@ -188,6 +193,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             );
 
             setUser(response.user);
+            setToken(response.token);
         },
         [],
     );
@@ -209,11 +215,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const logout = useCallback((): void => {
         clearStoredSession();
         setUser(null);
+        setToken(null);
         setAuthError(null);
     }, []);
 
     const value: AuthContextValue = {
         user,
+        token,
         isAuthenticated: user !== null,
         isLoading,
         authError,
