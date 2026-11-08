@@ -1,8 +1,8 @@
-import { useEffect, useState, type FormEvent, type FormEventHandler } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import {
     createApplication,
-    type ApplicationInput
+    type ApplicationInput,
 } from "../api/applications";
 import {
     createCompany,
@@ -14,7 +14,7 @@ import type {
     ApplicationStatus,
     Company,
     JobType,
-} from "../types"
+} from "../types";
 
 interface ApplicationFormProps {
     token: string;
@@ -112,7 +112,7 @@ export default function ApplicationForm({
         setCompanyFormError(null);
 
         if (!companyName.trim()) {
-            setCompanyFormError("Company Error is required.");
+            setCompanyFormError("Company name is required.");
             return;
         }
 
@@ -184,7 +184,7 @@ export default function ApplicationForm({
                 const url = new URL(jobUrl.trim());
 
                 if (url.protocol !== "http:" && url.protocol !== "https:") {
-                    throw new Error("invalid protocol.");
+                    throw new Error("Invalid protocol");
                 }
             } catch {
                 setFormError(
@@ -208,6 +208,7 @@ export default function ApplicationForm({
                 return;
             }
         }
+
         if (
             minSalary !== null &&
             maxSalary !== null &&
@@ -309,14 +310,14 @@ export default function ApplicationForm({
                         >
                             {showCompanyForm
                                 ? "Choose existing company"
-                                : "+Add company"}
+                                : "+ Add company"}
                         </button>
                     )}
                 </div>
 
                 {!showCompanyForm && companies.length > 0 && (
                     <div className="form-field">
-                        <label htmlFor="companyId">Select Company</label>
+                        <label htmlFor="companyId">Select company</label>
                         <select
                             id="companyId"
                             value={companyId}
@@ -344,21 +345,21 @@ export default function ApplicationForm({
                         onSubmit={handleCreateCompany}
                     >
                         <div className="form-field">
-                            <label htmlFor="companyName">Company Name *</label>
+                            <label htmlFor="companyName">Company name *</label>
                             <input
                                 id="companyName"
                                 value={companyName}
                                 onChange={(event) =>
                                     setCompanyName(event.target.value)
                                 }
-                                placeholder="e.g. Acme Techonologies"
+                                placeholder="e.g. Acme Technologies"
                                 required
                             />
                         </div>
 
                         <div className="form-field">
                             <label htmlFor="companyWebsite">
-                                Company Webiste
+                                Company website
                             </label>
                             <input
                                 id="companyWebsite"
@@ -373,12 +374,12 @@ export default function ApplicationForm({
 
                         <div className="form-field">
                             <label htmlFor="companyLocation">
-                                Company Location
+                                Company location
                             </label>
-                            <input 
+                            <input
                                 id="companyLocation"
                                 value={companyLocation}
-                                onChange={(event) => 
+                                onChange={(event) =>
                                     setCompanyLocation(event.target.value)
                                 }
                                 placeholder="e.g. Mumbai, India"
@@ -397,14 +398,154 @@ export default function ApplicationForm({
                             disabled={isCreatingCompany}
                         >
                             {isCreatingCompany
-                                ? "Creating Company..."
-                                : "Save Company"}
+                                ? "Creating company..."
+                                : "Save company"}
                         </button>
                     </form>
                 )}
             </div>
 
-            
+            <form className="application-form" onSubmit={handleSubmit}>
+                <div className="application-form-section-heading">
+                    <h3>Job details</h3>
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="position">Job position *</label>
+                    <input
+                        id="position"
+                        value={position}
+                        onChange={(event) => setPosition(event.target.value)}
+                        placeholder="e.g. Frontend Developer"
+                        required
+                    />
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="jobType">Job type *</label>
+                    <select
+                        id="jobType"
+                        value={jobType}
+                        onChange={(event) =>
+                            setJobType(event.target.value as JobType)
+                        }
+                    >
+                        {jobTypes.map((type) => (
+                            <option key={type.value} value={type.value}>
+                                {type.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="jobUrl">Job posting URL</label>
+                    <input
+                        id="jobUrl"
+                        type="url"
+                        value={jobUrl}
+                        onChange={(event) => setJobUrl(event.target.value)}
+                        placeholder="https://example.com/jobs/123"
+                    />
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="location">Job location</label>
+                    <input
+                        id="location"
+                        value={location}
+                        onChange={(event) => setLocation(event.target.value)}
+                        placeholder="e.g. Remote or Mumbai"
+                    />
+                </div>
+
+                <div className="application-form-grid">
+                    <div className="form-field">
+                        <label htmlFor="salaryMin">Minimum salary</label>
+                        <input
+                            id="salaryMin"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={salaryMin}
+                            onChange={(event) =>
+                                setSalaryMin(event.target.value)
+                            }
+                            placeholder="e.g. 500000"
+                        />
+                    </div>
+
+                    <div className="form-field">
+                        <label htmlFor="salaryMax">Maximum salary</label>
+                        <input
+                            id="salaryMax"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={salaryMax}
+                            onChange={(event) =>
+                                setSalaryMax(event.target.value)
+                            }
+                            placeholder="e.g. 800000"
+                        />
+                    </div>
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="status">Application status *</label>
+                    <select
+                        id="status"
+                        value={status}
+                        onChange={(event) =>
+                            setStatus(
+                                event.target.value as ApplicationStatus,
+                            )
+                        }
+                    >
+                        {statuses.map((item) => (
+                            <option key={item.value} value={item.value}>
+                                {item.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="appliedAt">Application date</label>
+                    <input
+                        id="appliedAt"
+                        type="date"
+                        value={appliedAt}
+                        onChange={(event) => setAppliedAt(event.target.value)}
+                    />
+                </div>
+
+                <div className="application-form-actions">
+                    <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={onCancel}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        className="primary-button"
+                        disabled={
+                            isSubmitting ||
+                            showCompanyForm ||
+                            companies.length === 0 ||
+                            !companyId
+                        }
+                    >
+                        {isSubmitting
+                            ? "Saving application..."
+                            : "Save application"}
+                    </button>
+                </div>
+            </form>
         </section>
-    )
+    );
 }
