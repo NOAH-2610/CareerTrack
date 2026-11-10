@@ -200,4 +200,4 @@ export default function RegisterPage() {
             </section>
         </main>
     );
-}
+}
