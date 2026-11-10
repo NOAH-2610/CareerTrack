@@ -230,3 +230,139 @@
     font-size: 0.9rem;
     font-weight: 650;
 }
+
+/* Application creation form */
+
+.application-form-panel {
+    padding: 28px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgb(23 32 51 / 4%);
+}
+
+.application-form-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.application-form-heading h2 {
+    margin: 0 0 8px;
+    color: var(--color-text);
+}
+
+.application-form-heading p {
+    margin: 0;
+    color: var(--color-muted);
+}
+
+.application-form-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.application-form-section-heading h3 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 1rem;
+}
+
+.text-button {
+    padding: 6px 0;
+    color: var(--color-primary);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.company-selection {
+    margin-bottom: 28px;
+    padding: 20px;
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+}
+
+.company-create-form,
+.application-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.application-form {
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+}
+
+.form-field select {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    color: var(--color-text);
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+    border-color: var(--color-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(49 87 213 / 12%);
+}
+
+.form-field input:disabled,
+.form-field select:disabled {
+    cursor: not-allowed;
+    background: #f8fafc;
+}
+
+.application-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.application-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.application-form-actions button:disabled,
+.company-create-form button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+@media (max-width: 600px) {
+    .application-form-panel {
+        padding: 20px;
+    }
+
+    .application-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .application-form-heading {
+        flex-direction: column;
+    }
+
+    .application-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .application-form-actions button {
+        width: 100%;
+    }
+}
