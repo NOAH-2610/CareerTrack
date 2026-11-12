@@ -1,0 +1,114 @@
+.dashboard-header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-header-inner {
+    max-width: 1200px;
+    min-height: 72px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.dashboard-brand {
+    color: var(--color-primary);
+    font-size: 23px;
+    font-weight: 750;
+    text-decoration: none;
+    letter-spacing: -0.8px;
+}
+
+.dashboard-navigation {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+.nav-link {
+    color: var(--color-muted);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 26px 0;
+    border-bottom: 3px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--color-primary);
+}
+
+.nav-link.active {
+    border-bottom-color: var(--color-primary);
+}
+
+.dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.dashboard-user-name {
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.dashboard-logout-button {
+    padding: 9px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 7px;
+    background: #ffffff;
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.dashboard-logout-button:hover {
+    background: #f1f5f9;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header-inner {
+        flex-wrap: wrap;
+        padding: 16px 20px;
+        gap: 16px;
+    }
+
+    .dashboard-navigation {
+        order: 3;
+        width: 100%;
+        gap: 24px;
+    }
+
+    .nav-link {
+        padding: 10px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header-actions {
+        gap: 10px;
+    }
+
+    .dashboard-user-name {
+        font-size: 12px;
+    }
+
+    .dashboard-logout-button {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .dashboard-brand {
+        font-size: 20px;
+    }
+}
+

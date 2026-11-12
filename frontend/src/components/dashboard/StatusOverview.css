@@ -1,0 +1,78 @@
+.status-overview {
+    padding: 24px;
+    margin-bottom: 32px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+}
+
+.status-overview h2 {
+    margin: 0 0 24px;
+    color: var(--color-text);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status-item-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 9px;
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-progress-track {
+    height: 9px;
+    overflow: hidden;
+    background: #edf1f7;
+    border-radius: 20px;
+}
+
+.status-progress-fill {
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.3s ease;
+}
+
+.status-wishlist {
+    background: #94a3b8;
+}
+
+.status-applied {
+    background: #3b82f6;
+}
+
+.status-assessment {
+    background: #8b5cf6;
+}
+
+.status-interview {
+    background: #0d9488;
+}
+
+.status-offer {
+    background: #16a34a;
+}
+
+.status-rejected {
+    background: #dc2626;
+}
+
+.status-withdrawn {
+    background: #64748b;
+}
+
+@media (max-width: 600px) {
+    .status-overview {
+        padding: 18px;
+    }
+}

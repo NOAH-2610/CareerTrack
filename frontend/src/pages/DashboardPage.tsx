@@ -3,6 +3,12 @@ import { useAuth } from "../auth/authContext";
 import { getApplications } from "../api/applications";
 import { ApiError } from "../api/client";
 import type { Application } from "../types";
+import "./DashboardPage.css";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
+import WelcomeSection from "../components/dashboard/WelcomeSection";
+import ApplicationStats from "../components/dashboard/ApplicationStats";
+import StatusOverview from "../components/dashboard/StatusOverview";
+import RecentApplications from "../components/dashboard/RecentApplications";
 
 export default function DashboardPage() {
     const { user, token, logout } = useAuth();
@@ -54,35 +60,42 @@ export default function DashboardPage() {
     }, [token, refreshKey]);
 
     return (
-        <main>
-            <h1>CareerTrack Dashboard</h1>
+        <>
+            <DashboardHeader
+                userName={user?.name ?? "User"}
+                onLogout={logout}
+            />
 
-            <p>Welcome, {user?.name}!</p>
+            <main className="dashboard-page">
+                <WelcomeSection userName={user?.name ?? "User"} />
 
-            <p>Email: {user?.email}</p>
+                <p className="dashboard-user-email">Email: {user?.email}</p>
 
-            {isLoading && <p>Loading your applications...</p>}
+                {isLoading && <p className="dashboard-loading">Loading your applications...</p>}
 
-            {error && (
-                <div role="alert">
-                    <p>{error}</p>
+                {error && (
+                    <div className="dashboard-error" role="alert">
+                        <p>{error}</p>
 
-                    <button
-                        type="button"
-                        onClick={() => setRefreshKey((current) => current + 1)}
-                    >
-                        Try again
-                    </button>
-                </div>
-            )}
+                        <button
+                            type="button"
+                            onClick={() => setRefreshKey((current) => current + 1)}
+                        >
+                            Try again
+                        </button>
+                    </div>
+                )}
 
-            {!isLoading && !error && (
-                <p>Total applications: {applications.length}</p>
-            )}
+                {!isLoading && !error && (
+                    <>
+                        <ApplicationStats applications={applications} />
 
-            <button type="button" onClick={logout}>
-                Log out
-            </button>
-        </main>
+                        <StatusOverview applications={applications} />
+
+                        <RecentApplications applications={applications} />
+                    </>
+                )}
+            </main>
+        </>
     );
 }

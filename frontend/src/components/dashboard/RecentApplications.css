@@ -1,0 +1,149 @@
+.recent-applications {
+    padding: 24px;
+    margin-bottom: 32px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+}
+
+.recent-applications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.recent-applications-header h2 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.recent-applications-header a {
+    color: var(--color-primary);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.recent-applications-header a:hover {
+    text-decoration: underline;
+}
+
+.recent-applications-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.recent-application-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.recent-application-item:first-child {
+    padding-top: 0;
+}
+
+.recent-application-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.recent-application-details h3 {
+    margin: 0 0 6px;
+    color: var(--color-text);
+    font-size: 15px;
+    font-weight: 650;
+}
+
+.recent-application-details p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+
+.recent-application-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.recent-status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.recent-status.status-wishlist {
+    color: #475569;
+    background: #f1f5f9;
+}
+
+.recent-status.status-applied {
+    color: #1d4ed8;
+    background: #dbeafe;
+}
+
+.recent-status.status-assessment {
+    color: #6d28d9;
+    background: #ede9fe;
+}
+
+.recent-status.status-interview {
+    color: #0f766e;
+    background: #ccfbf1;
+}
+
+.recent-status.status-offer {
+    color: #15803d;
+    background: #dcfce7;
+}
+
+.recent-status.status-rejected {
+    color: #b91c1c;
+    background: #fee2e2;
+}
+
+.recent-status.status-withdrawn {
+    color: #475569;
+    background: #e2e8f0;
+}
+
+.recent-application-meta time {
+    color: var(--color-muted);
+    font-size: 12px;
+}
+
+.recent-empty-message {
+    margin: 0;
+    padding: 20px 0;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+@media (max-width: 600px) {
+    .recent-applications {
+        padding: 18px;
+    }
+
+    .recent-application-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .recent-application-meta {
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,28 @@
+.welcome-section {
+    margin-bottom: 32px;
+}
+
+.welcome-section h1 {
+    margin: 0 0 10px;
+    color: var(--color-text);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.7px;
+}
+
+.welcome-section p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+    .welcome-section h1 {
+        font-size: 23px;
+    }
+
+    .welcome-section p {
+        font-size: 14px;
+    }
+}
