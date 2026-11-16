@@ -6,7 +6,7 @@ import { ApiError } from "../api/client";
 import { getCompanies } from "../api/companies";
 import type {
     Application,
-    ApplicationPagination,
+    ApplicationPagination as ApplicationPaginationMeta,
     ApplicationQueryParams,
     ApplicationSortField,
     ApplicationStatus,
@@ -16,6 +16,7 @@ import type {
 } from "../types";
 import ApplicationForm from "../components/ApplicationForm";
 import ApplicationDetailDrawer from "../components/applications/ApplicationDetailDrawer";
+import ApplicationPagination from "../components/applications/ApplicationPagination";
 import ApplicationTable from "../components/applications/ApplicationTable";
 import ApplicationToolbar from "../components/applications/ApplicationToolbar";
 import ApplicationsHeader from "../components/applications/ApplicationsHeader";
@@ -37,10 +38,9 @@ export default function ApplicationsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(INITIAL_PAGE);
-    // The setter will be used when page-size controls are added.
-    const [pageSize] = useState<PageSize>(INITIAL_PAGE_SIZE);
+    const [pageSize, setPageSize] = useState<PageSize>(INITIAL_PAGE_SIZE);
     const [pagination, setPagination] =
-        useState<ApplicationPagination | null>(null);
+        useState<ApplicationPaginationMeta | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [showForm, setShowForm] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -282,6 +282,15 @@ export default function ApplicationsPage() {
         handleClearJobType();
     }
 
+    function handlePageChange(page: number): void {
+        setCurrentPage(page);
+    }
+
+    function handlePageSizeChange(nextPageSize: PageSize): void {
+        setPageSize(nextPageSize);
+        setCurrentPage(INITIAL_PAGE);
+    }
+
     function handleApplicationCreated() {
         setShowForm(false);
         setCurrentPage(INITIAL_PAGE);
@@ -394,6 +403,15 @@ export default function ApplicationsPage() {
                                 onRowClick={handleApplicationSelect}
                                 onEdit={handleEditPlaceholder}
                                 onDelete={handleDeletePlaceholder}
+                            />
+                        )}
+
+                        {!isLoading && !error && pagination && (
+                            <ApplicationPagination
+                                pagination={pagination}
+                                pageSize={pageSize}
+                                onPageChange={handlePageChange}
+                                onPageSizeChange={handlePageSizeChange}
                             />
                         )}
                     </>
