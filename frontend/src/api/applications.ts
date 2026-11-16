@@ -3,6 +3,8 @@ import type {
     Application,
     ApplicationStatus,
     JobType,
+    ApplicationPagination,
+    ApplicationQueryParams,
 } from "../types";
 
 export interface ApplicationInput {
@@ -21,6 +23,7 @@ export interface ApplicationListResponse {
     message: string;
     count: number;
     applications: Application[];
+    pagination?: ApplicationPagination;
 }
 
 export interface ApplicationResponse {
@@ -30,12 +33,29 @@ export interface ApplicationResponse {
 
 export function getApplications(
     token: string,
+    params?: ApplicationQueryParams,
 ): Promise<ApplicationListResponse> {
-    return apiRequest<ApplicationListResponse>("/applications", {
+    const queryParams = new URLSearchParams();
+
+    if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== "") {
+                queryParams.append(key, String(value));
+            }
+    });
+    }
+
+    const queryString = queryParams.toString();
+
+    const endpoint = queryString
+        ? `/applications?${queryString}`
+        : "/applications";
+
+    return apiRequest<ApplicationListResponse>(endpoint, {
         method: "GET",
         token,
     });
-}
+}   
 
 export function getApplication(
     token: string,

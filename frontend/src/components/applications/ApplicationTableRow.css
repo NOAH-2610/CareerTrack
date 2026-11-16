@@ -1,0 +1,137 @@
+.application-table-row-clickable {
+    cursor: pointer;
+}
+
+.application-table-row-clickable:hover {
+    background: #f8fafc;
+}
+
+.application-table-primary {
+    display: block;
+    color: var(--color-text);
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.application-table-row-action {
+    display: block;
+    max-width: 100%;
+    padding: 0;
+    color: var(--color-text);
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-weight: 650;
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+}
+
+.application-table-row-action:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.application-table-row-action:focus-visible {
+    border-radius: 4px;
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.application-table-secondary {
+    display: block;
+    margin-top: 2px;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.application-table-date,
+.application-table-compensation {
+    color: var(--color-text);
+    white-space: nowrap;
+}
+
+.application-table-compensation {
+    font-variant-numeric: tabular-nums;
+}
+
+.application-table-empty-value {
+    color: #94a3b8;
+}
+
+.application-table-job-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-primary);
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.application-table-job-link:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+}
+
+.application-table-job-link:focus-visible {
+    border-radius: 4px;
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.application-table-job-link-icon {
+    font-size: 0.85em;
+    line-height: 1;
+}
+
+.application-table-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.application-table-action-group {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.application-table-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--color-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.application-table-action svg {
+    width: 17px;
+    height: 17px;
+}
+
+.application-table-action:hover {
+    color: var(--color-text);
+    background: #f1f5f9;
+}
+
+.application-table-action:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.application-table-action-edit:hover {
+    color: var(--color-primary);
+    background: #eef2ff;
+}
+
+.application-table-action-delete:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+}

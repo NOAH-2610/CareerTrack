@@ -1,47 +1,88 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 
 import { useAuth } from "../auth/authContext";
 import { getApplications } from "../api/applications";
 import { ApiError } from "../api/client";
-import type { Application } from "../types";
+import { getCompanies } from "../api/companies";
+import type {
+    Application,
+    ApplicationPagination,
+    ApplicationQueryParams,
+    ApplicationSortField,
+    ApplicationStatus,
+    Company,
+    JobType,
+    SortOrder,
+} from "../types";
 import ApplicationForm from "../components/ApplicationForm";
+import ApplicationDetailDrawer from "../components/applications/ApplicationDetailDrawer";
+import ApplicationTable from "../components/applications/ApplicationTable";
+import ApplicationToolbar from "../components/applications/ApplicationToolbar";
+import ApplicationsHeader from "../components/applications/ApplicationsHeader";
+import ApplicationsSidebar from "../components/applications/ApplicationsSidebar";
 import "./ApplicationsPage.css";
 
-function formatStatus(status: Application["status"]): string {
-    const labels: Record<Application["status"], string> = {
-        WISHLIST: "Wishlist",
-        APPLIED: "Applied",
-        ASSESSMENT: "Assessment",
-        INTERVIEW: "Interview",
-        OFFER: "Offer",
-        REJECTED: "Rejected",
-        WITHDRAWN: "Withdrawn",
-    };
+type PageSize = NonNullable<ApplicationQueryParams["limit"]>;
 
-    return labels[status];
-}
-
-function formatJobType(jobType: Application["jobType"]): string {
-    const labels: Record<Application["jobType"], string> = {
-        FULL_TIME: "Full-time",
-        PART_TIME: "Part-time",
-        CONTRACT: "Contract",
-        INTERNSHIP: "Internship",
-        FREELANCE: "Freelance",
-    };
-
-    return labels[jobType];
-}
+const INITIAL_PAGE = 1;
+const INITIAL_PAGE_SIZE: PageSize = 10;
+const INITIAL_SORT_BY = "createdAt";
+const INITIAL_SORT_ORDER = "desc";
+const SEARCH_DEBOUNCE_MS = 350;
 
 export default function ApplicationsPage() {
-    const { token } = useAuth();
+    const { user, token, logout } = useAuth();
 
     const [applications, setApplications] = useState<Application[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(INITIAL_PAGE);
+    // The setter will be used when page-size controls are added.
+    const [pageSize] = useState<PageSize>(INITIAL_PAGE_SIZE);
+    const [pagination, setPagination] =
+        useState<ApplicationPagination | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [showForm, setShowForm] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [selectedApplicationId, setSelectedApplicationId] = useState<
+        number | null
+    >(null);
+
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [companyError, setCompanyError] = useState<string | null>(null);
+    const [companyRefreshKey, setCompanyRefreshKey] = useState(0);
+
+    const selectedApplication =
+        selectedApplicationId === null
+            ? null
+            : applications.find(
+                  (application) => application.id === selectedApplicationId,
+              ) ?? null;
+
+    const selectedCompany =
+        selectedApplication === null
+            ? null
+            : companies.find(
+                  (company) => company.id === selectedApplication.companyId,
+              ) ?? null;
+
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [status, setStatus] = useState<ApplicationStatus | "">("");
+    const [jobType, setJobType] = useState<JobType | "">("");
+    const [sortBy, setSortBy] =
+        useState<ApplicationSortField>(INITIAL_SORT_BY);
+    const [sortOrder, setSortOrder] = useState<SortOrder>(INITIAL_SORT_ORDER);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setDebouncedSearch(search);
+        }, SEARCH_DEBOUNCE_MS);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [search]);
 
     useEffect(() => {
         let isActive = true;
@@ -55,23 +96,76 @@ export default function ApplicationsPage() {
                 return;
             }
 
-            try {
-                const response = await getApplications(token);
+            setIsLoading(true);
+            setError(null);
 
-                if (isActive) {
-                    setApplications(response.applications);
-                    setError(null);
+            let shouldFinishLoading = true;
+
+            try {
+                const response = await getApplications(token, {
+                    page: currentPage,
+                    limit: pageSize,
+                    search: debouncedSearch || undefined,
+                    status: status || undefined,
+                    jobType: jobType || undefined,
+                    sortBy,
+                    sortOrder,
+                });
+
+                if (!isActive) {
+                    return;
                 }
-            } catch (err) {
-                if (isActive) {
-                    setError(
-                        err instanceof ApiError
-                            ? err.message
-                            : "Unable to load your applications.",
+
+                const nextPagination = response.pagination;
+
+                function applyApplications(): void {
+                    setApplications(response.applications);
+                    setSelectedApplicationId((currentId) =>
+                        currentId !== null &&
+                        !response.applications.some(
+                            (application) => application.id === currentId,
+                        )
+                            ? null
+                            : currentId,
                     );
                 }
+
+                if (!nextPagination) {
+                    applyApplications();
+                    setPagination(null);
+                    return;
+                }
+
+                // A page can become invalid after deletions, so fall back to the
+                // last available page and let the effect fetch it again.
+                if (
+                    nextPagination.totalPages > 0 &&
+                    currentPage > nextPagination.totalPages
+                ) {
+                    shouldFinishLoading = false;
+                    setCurrentPage(nextPagination.totalPages);
+                    return;
+                }
+
+                applyApplications();
+                setPagination(nextPagination);
+            } catch (err) {
+                if (!isActive) {
+                    return;
+                }
+
+                if (err instanceof ApiError && err.status === 401) {
+                    logout();
+                    return;
+                }
+
+                setError(
+                    err instanceof ApiError
+                        ? err.message
+                        : "Unable to load your applications.",
+                );
             } finally {
-                if (isActive) {
+                if (isActive && shouldFinishLoading) {
                     setIsLoading(false);
                 }
             }
@@ -82,144 +176,238 @@ export default function ApplicationsPage() {
         return () => {
             isActive = false;
         };
-    }, [token, refreshKey]);
+    }, [
+        token,
+        currentPage,
+        pageSize,
+        debouncedSearch,
+        status,
+        jobType,
+        sortBy,
+        sortOrder,
+        refreshKey,
+        logout,
+    ]);
+
+    useEffect(() => {
+        let isActive = true;
+
+        async function fetchCompanies() {
+            if (!token) {
+                if (isActive) {
+                    setCompanies([]);
+                    setCompanyError(null);
+                }
+                return;
+            }
+
+            setCompanyError(null);
+
+            try {
+                const response = await getCompanies(token);
+
+                if (!isActive) {
+                    return;
+                }
+
+                setCompanies(response.companies);
+            } catch (err) {
+                if (!isActive) {
+                    return;
+                }
+
+                if (err instanceof ApiError && err.status === 401) {
+                    logout();
+                    return;
+                }
+
+                setCompanyError(
+                    err instanceof ApiError
+                        ? `Company details could not be loaded. ${err.message}`
+                        : "Company details could not be loaded.",
+                );
+            }
+        }
+
+        void fetchCompanies();
+
+        return () => {
+            isActive = false;
+        };
+    }, [token, companyRefreshKey, logout]);
+
+    function handleSearchChange(value: string): void {
+        setSearch(value);
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleStatusChange(value: ApplicationStatus | ""): void {
+        setStatus(value);
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleJobTypeChange(value: JobType | ""): void {
+        setJobType(value);
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleSortChange(
+        nextSortBy: ApplicationSortField,
+        nextSortOrder: SortOrder,
+    ): void {
+        setSortBy(nextSortBy);
+        setSortOrder(nextSortOrder);
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleClearSearch(): void {
+        setSearch("");
+        setDebouncedSearch("");
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleClearStatus(): void {
+        setStatus("");
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleClearJobType(): void {
+        setJobType("");
+        setCurrentPage(INITIAL_PAGE);
+    }
+
+    function handleClearAll(): void {
+        handleClearSearch();
+        handleClearStatus();
+        handleClearJobType();
+    }
 
     function handleApplicationCreated() {
         setShowForm(false);
-        setIsLoading(true);
+        setCurrentPage(INITIAL_PAGE);
         setRefreshKey((current) => current + 1);
+        setCompanyRefreshKey((current) => current + 1);
     }
 
+    function handleApplicationSelect(application: Application): void {
+        setSelectedApplicationId(application.id);
+    }
+
+    function handleDrawerClose(): void {
+        setSelectedApplicationId(null);
+    }
+
+    // Editing and deletion are connected in later milestones.
+    function handleEditPlaceholder(): void {
+        // Intentionally no-op.
+    }
+
+    function handleDeletePlaceholder(): void {
+        // Intentionally no-op.
+    }
+
+    const totalApplicationCount = pagination?.totalItems ?? 0;
+
     return (
-        <main className="applications-page">
-            <header className="applications-header">
-                <div>
-                    <Link to="/dashboard" className="back-link">
-                        ← Dashboard
-                    </Link>
+        <div className="applications-layout">
+            <ApplicationsSidebar
+                user={user}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapsed={() =>
+                    setIsSidebarCollapsed((current) => !current)
+                }
+                onLogout={logout}
+            />
 
-                    <h1>My Applications</h1>
-                    <p>Keep track of your job applications in one place.</p>
-                </div>
-
-                {!showForm && (
-                    <button
-                        type="button"
-                        className="primary-button"
-                        onClick={() => setShowForm(true)}
-                    >
-                        + Add Application
-                    </button>
-                )}
-            </header>
-
-            {showForm && token ? (
-                <ApplicationForm
-                    token={token}
-                    onCreated={handleApplicationCreated}
-                    onCancel={() => setShowForm(false)}
+            <main className="applications-page">
+                <ApplicationsHeader
+                    applicationCount={totalApplicationCount}
+                    onNewApplication={() => setShowForm(true)}
+                    isFormOpen={showForm}
                 />
-            ) : (
-                <>
-                    {isLoading && (
-                        <section className="applications-message">
-                            <p>Loading your applications...</p>
-                        </section>
-                    )}
 
-                    {!isLoading && error && (
-                        <section className="applications-message applications-error">
-                            <p>{error}</p>
-                            <button
-                                type="button"
-                                className="secondary-button"
-                                onClick={() => {
-                                    setIsLoading(true);
-                                    setRefreshKey((current) => current + 1);
-                                }}
-                            >
-                                Try again
-                            </button>
-                        </section>
-                    )}
+                {showForm && token ? (
+                    <ApplicationForm
+                        token={token}
+                        onCreated={handleApplicationCreated}
+                        onCancel={() => setShowForm(false)}
+                    />
+                ) : (
+                    <>
+                        <ApplicationToolbar
+                            search={search}
+                            status={status}
+                            jobType={jobType}
+                            sortBy={sortBy}
+                            sortOrder={sortOrder}
+                            onSearchChange={handleSearchChange}
+                            onStatusChange={handleStatusChange}
+                            onJobTypeChange={handleJobTypeChange}
+                            onSortChange={handleSortChange}
+                            onClearSearch={handleClearSearch}
+                            onClearStatus={handleClearStatus}
+                            onClearJobType={handleClearJobType}
+                            onClearAll={handleClearAll}
+                        />
 
-                    {!isLoading && !error && applications.length === 0 && (
-                        <section className="applications-message applications-empty">
-                            <h2>No applications yet</h2>
-                            <p>
-                                Your job applications will appear here once
-                                you add your first one.
+                        {companyError && !error && (
+                            <p className="applications-warning" role="status">
+                                {companyError}
                             </p>
-                        </section>
-                    )}
+                        )}
 
-                    {!isLoading && !error && applications.length > 0 && (
-                        <>
-                            <div className="applications-summary">
-                                {applications.length}{" "}
-                                {applications.length === 1
-                                    ? "application"
-                                    : "applications"}
-                            </div>
-
-                            <section className="applications-list">
-                                {applications.map((application) => (
-                                    <article
-                                        className="application-card"
-                                        key={application.id}
-                                    >
-                                        <div className="application-card-header">
-                                            <div>
-                                                <h2>{application.position}</h2>
-                                                <p className="application-company">
-                                                    {application.company?.name ??
-                                                        "Unknown company"}
-                                                </p>
-                                            </div>
-
-                                            <span
-                                                className={`status-badge status-${application.status.toLowerCase()}`}
-                                            >
-                                                {formatStatus(application.status)}
-                                            </span>
-                                        </div>
-
-                                        <div className="application-details">
-                                            <span>
-                                                {formatJobType(application.jobType)}
-                                            </span>
-
-                                            {application.location && (
-                                                <span>{application.location}</span>
-                                            )}
-
-                                            {application.appliedAt && (
-                                                <span>
-                                                    Applied:{" "}
-                                                    {new Date(
-                                                        application.appliedAt,
-                                                    ).toLocaleDateString()}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {application.jobUrl && (
-                                            <a
-                                                href={application.jobUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="job-link"
-                                            >
-                                                View job posting ↗
-                                            </a>
-                                        )}
-                                    </article>
-                                ))}
+                        {isLoading && (
+                            <section className="applications-message">
+                                <p>Loading your applications...</p>
                             </section>
-                        </>
-                    )}
-                </>
-            )}
-        </main>
+                        )}
+
+                        {!isLoading && error && (
+                            <section className="applications-message applications-error">
+                                <p>{error}</p>
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={() => {
+                                        setRefreshKey((current) => current + 1);
+                                    }}
+                                >
+                                    Try again
+                                </button>
+                            </section>
+                        )}
+
+                        {!isLoading && !error && applications.length === 0 && (
+                            <section className="applications-message applications-empty">
+                                <h2>No applications yet</h2>
+                                <p>
+                                    Your job applications will appear here once
+                                    you add your first one.
+                                </p>
+                            </section>
+                        )}
+
+                        {!isLoading && !error && applications.length > 0 && (
+                            <ApplicationTable
+                                applications={applications}
+                                companies={companies}
+                                onRowClick={handleApplicationSelect}
+                                onEdit={handleEditPlaceholder}
+                                onDelete={handleDeletePlaceholder}
+                            />
+                        )}
+                    </>
+                )}
+
+                <ApplicationDetailDrawer
+                    isOpen={selectedApplication !== null}
+                    application={selectedApplication}
+                    company={selectedCompany}
+                    onClose={handleDrawerClose}
+                    onEdit={handleEditPlaceholder}
+                    onDelete={handleDeletePlaceholder}
+                />
+            </main>
+        </div>
     );
 }

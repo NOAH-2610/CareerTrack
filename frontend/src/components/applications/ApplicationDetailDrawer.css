@@ -1,0 +1,221 @@
+.application-detail-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.application-detail-drawer-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.application-detail-drawer-heading {
+    min-width: 0;
+}
+
+.application-detail-drawer-eyebrow {
+    margin: 0 0 6px;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.application-detail-drawer-title {
+    margin: 0;
+    color: var(--color-text);
+    font-size: clamp(1.25rem, 2.4vw, 1.5rem);
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.application-detail-drawer-company {
+    margin: 6px 0 0;
+    color: var(--color-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.application-detail-drawer-badge {
+    flex: 0 0 auto;
+}
+
+.application-detail-drawer-body {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.application-detail-drawer-section + .application-detail-drawer-section {
+    padding-top: 22px;
+    border-top: 1px solid var(--color-border);
+}
+
+.application-detail-drawer-section-title {
+    margin: 0 0 10px;
+    color: var(--color-text);
+    font-size: 0.82rem;
+    font-weight: 750;
+    letter-spacing: 0.02em;
+}
+
+.application-detail-drawer-list {
+    margin: 0;
+}
+
+.application-detail-drawer-item {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.application-detail-drawer-item:first-child {
+    padding-top: 0;
+}
+
+.application-detail-drawer-item:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.application-detail-drawer-item dt {
+    color: var(--color-muted);
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.application-detail-drawer-item dd {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.application-detail-drawer-compensation {
+    font-variant-numeric: tabular-nums;
+}
+
+.application-detail-drawer-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+}
+
+.application-detail-drawer-link:hover {
+    color: var(--color-primary-hover);
+}
+
+.application-detail-drawer-link:focus-visible {
+    border-radius: 4px;
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.application-detail-drawer-link-icon {
+    font-size: 0.85em;
+    line-height: 1;
+}
+
+.application-detail-drawer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border);
+}
+
+.application-detail-drawer-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease;
+}
+
+.application-detail-drawer-button svg {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+}
+
+.application-detail-drawer-button:focus-visible {
+    outline: 3px solid #9bb5ff;
+    outline-offset: 2px;
+}
+
+.application-detail-drawer-button-danger {
+    color: var(--color-danger);
+    background: var(--color-surface);
+    border: 1px solid #fecdca;
+}
+
+.application-detail-drawer-button-danger:hover {
+    background: var(--color-danger-bg);
+    border-color: #fda29b;
+}
+
+.application-detail-drawer-button-primary {
+    color: var(--color-surface);
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.application-detail-drawer-button-primary:hover {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+}
+
+@media (max-width: 600px) {
+    .application-detail-drawer-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .application-detail-drawer-item {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .application-detail-drawer-actions {
+        flex-direction: column-reverse;
+    }
+
+    .application-detail-drawer-button {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .application-detail-drawer-button {
+        transition: none;
+    }
+}

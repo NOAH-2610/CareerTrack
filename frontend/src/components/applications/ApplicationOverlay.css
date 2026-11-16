@@ -1,0 +1,161 @@
+.application-overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    background: rgb(15 23 42 / 48%);
+    animation: application-overlay-backdrop-in 160ms ease-out;
+}
+
+.application-overlay-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--color-text);
+    background: var(--color-surface);
+    outline: none;
+}
+
+.application-overlay-panel-drawer {
+    width: min(560px, 100vw);
+    height: 100vh;
+    height: 100dvh;
+    margin-left: auto;
+    border-left: 1px solid var(--color-border);
+    box-shadow: -18px 0 48px rgb(15 23 42 / 18%);
+    animation: application-overlay-drawer-in 220ms cubic-bezier(
+        0.22,
+        0.61,
+        0.36,
+        1
+    );
+}
+
+.application-overlay-panel-dialog {
+    align-self: center;
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgb(15 23 42 / 22%);
+    animation: application-overlay-dialog-in 180ms ease-out;
+}
+
+.application-overlay-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    padding: 12px 16px 0;
+}
+
+.application-overlay-close-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: var(--color-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        background 150ms ease,
+        border-color 150ms ease;
+}
+
+.application-overlay-close-button:hover {
+    color: var(--color-text);
+    background: #f1f5f9;
+    border-color: var(--color-border);
+}
+
+.application-overlay-close-button:focus-visible {
+    outline: 3px solid #9bb5ff;
+    outline-offset: 2px;
+}
+
+.application-overlay-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 28px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.application-overlay-panel-with-close .application-overlay-content {
+    padding-top: 12px;
+}
+
+@keyframes application-overlay-backdrop-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes application-overlay-drawer-in {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes application-overlay-dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 600px) {
+    .application-overlay-panel-drawer {
+        width: 100%;
+    }
+
+    .application-overlay-panel-dialog {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
+        border-radius: 12px;
+    }
+
+    .application-overlay-toolbar {
+        padding: 8px 12px 0;
+    }
+
+    .application-overlay-content {
+        padding: 20px;
+    }
+
+    .application-overlay-panel-with-close .application-overlay-content {
+        padding-top: 8px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .application-overlay-backdrop,
+    .application-overlay-panel-drawer,
+    .application-overlay-panel-dialog {
+        animation: none;
+    }
+}

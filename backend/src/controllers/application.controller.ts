@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { ApplicationStatus, JobType } from "@prisma/client";
+import { ApplicationStatus, JobType, Prisma } from "@prisma/client";
 import prisma from "../lib/prisma";
 
 export async function createApplication(
@@ -268,27 +268,287 @@ export async function listApplications(
             return;
         }
 
-        const applications = await prisma.application.findMany({
-            where: {
-                userId,
-            },
-            include: {
-                company: {
-                    select: {
-                        id: true,
-                        name: true,
+        // Read query parameters
+        const {
+            page: pageValue,
+            limit: limitValue,
+            search: searchValue,
+            status: statusValue,
+            jobType: jobTypeValue,
+            sortBy: sortByValue,
+            sortOrder: sortOrderValue,
+        } = req.query;
+
+        // Validate query parameter types
+        const queryValues = [
+            pageValue,
+            limitValue,
+            searchValue,
+            statusValue,
+            jobTypeValue,
+            sortByValue,
+            sortOrderValue,
+        ];
+
+        if (
+            queryValues.some(
+                (value) =>
+                    value !== undefined &&
+                    typeof value !== "string"
+            )
+        ) {
+            res.status(400).json({
+                message: "Query parameters must be single string values.",
+            });
+            return;
+        }
+
+        // Pagination validation
+        const paginationRequested =
+            pageValue !== undefined || limitValue !== undefined;
+
+        const page =
+            pageValue === undefined ? 1 : Number(pageValue);
+
+        const limit =
+            limitValue === undefined ? 10 : Number(limitValue);
+
+        if (
+            !Number.isSafeInteger(page) ||
+            page <= 0
+        ) {
+            res.status(400).json({
+                message: "Page must be a positive integer.",
+            });
+            return;
+        }
+
+        if (
+            !Number.isSafeInteger(limit) ||
+            ![10, 25, 50].includes(limit)
+        ) {
+            res.status(400).json({
+                message: "Limit must be 10, 25, or 50.",
+            });
+            return;
+        }
+
+        // Search validation
+        const search =
+            typeof searchValue === "string"
+                ? searchValue.trim()
+                : "";
+
+        // Status validation
+        if (
+            statusValue !== undefined &&
+            !Object.values(ApplicationStatus).includes(
+                statusValue as ApplicationStatus
+            )
+        ) {
+            res.status(400).json({
+                message: "Invalid application status.",
+                allowedValues: Object.values(ApplicationStatus),
+            });
+            return;
+        }
+
+        // Job type validation
+        if (
+            jobTypeValue !== undefined &&
+            !Object.values(JobType).includes(
+                jobTypeValue as JobType
+            )
+        ) {
+            res.status(400).json({
+                message: "Invalid job type.",
+                allowedValues: Object.values(JobType),
+            });
+            return;
+        }
+
+        // Sorting validation
+        const allowedSortFields = [
+            "appliedAt",
+            "company",
+            "createdAt",
+            "salaryMax",
+        ];
+
+        const sortBy =
+            typeof sortByValue === "string"
+                ? sortByValue
+                : "createdAt";
+
+        if (!allowedSortFields.includes(sortBy)) {
+            res.status(400).json({
+                message: "Invalid sorting field.",
+                allowedValues: allowedSortFields,
+            });
+            return;
+        }
+
+        const sortOrder =
+            typeof sortOrderValue === "string"
+                ? sortOrderValue
+                : "desc";
+
+        if (
+            sortOrder !== "asc" &&
+            sortOrder !== "desc"
+        ) {
+            res.status(400).json({
+                message: "sortOrder must be either asc or desc.",
+            });
+            return;
+        }
+
+        // Build Prisma filters
+        const where: Prisma.ApplicationWhereInput = {
+            userId,
+
+            ...(search
+                ? {
+                    OR: [
+                        {
+                            position: {
+                                contains: search,
+                                mode: "insensitive",
+                            },
+                        },
+                        {
+                            location: {
+                                contains: search,
+                                mode: "insensitive",
+                            },
+                        },
+                        {
+                            company: {
+                                is: {
+                                    name: {
+                                        contains: search,
+                                        mode: "insensitive",
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                }
+                : {}),
+
+            ...(statusValue !== undefined
+                ? {
+                    status: statusValue as ApplicationStatus,
+                }
+                : {}),
+
+            ...(jobTypeValue !== undefined
+                ? {
+                    jobType: jobTypeValue as JobType,
+                }
+                : {}),
+        };
+
+        // Build sorting configuration
+        const orderBy: Prisma.ApplicationOrderByWithRelationInput[] = [];
+
+        switch (sortBy) {
+            case "appliedAt":
+                orderBy.push({
+                    appliedAt: {
+                        sort: sortOrder,
+                        nulls: "last",
+                    },
+                });
+                break;
+
+            case "company":
+                orderBy.push({
+                    company: {
+                        name: sortOrder,
+                    },
+                });
+                break;
+
+            case "salaryMax":
+                orderBy.push({
+                    salaryMax: {
+                        sort: sortOrder,
+                        nulls: "last",
+                    },
+                });
+                break;
+
+            case "createdAt":
+            default:
+                orderBy.push({
+                    createdAt: sortOrder,
+                });
+                break;
+        }
+
+        // Add a stable secondary sort
+        orderBy.push({
+            id: "desc",
+        });
+
+        // Build database query
+        const paginationOptions: {
+            skip?: number;
+            take?: number;
+        } = paginationRequested
+                ? {
+                    skip: (page - 1) * limit,
+                    take: limit,
+                }
+                : {};
+
+        // Fetch applications and total count
+        const [applications, totalItems] = await Promise.all([
+            prisma.application.findMany({
+                where,
+                include: {
+                    company: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
                     },
                 },
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-        });
+                orderBy,
+                ...paginationOptions,
+            }),
+
+            prisma.application.count({
+                where,
+            }),
+        ]);
+
+        // Preserve the existing response for unpaginated requests
+        if (!paginationRequested) {
+            res.status(200).json({
+                message: "Applications retrieved successfully.",
+                count: applications.length,
+                applications,
+            });
+            return;
+        }
+
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalItems / limit);
 
         res.status(200).json({
             message: "Applications retrieved successfully.",
             count: applications.length,
             applications,
+            pagination: {
+                page,
+                limit,
+                totalItems,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1,
+            },
         });
     } catch (error) {
         console.error("Application retrieval failed:", error);

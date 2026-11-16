@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import {
     createApplication,
+    updateApplication,
     type ApplicationInput,
 } from "../api/applications";
 import {
@@ -11,15 +12,53 @@ import {
 } from "../api/companies";
 import { ApiError } from "../api/client";
 import type {
+    Application,
     ApplicationStatus,
     Company,
     JobType,
 } from "../types";
 
-interface ApplicationFormProps {
+type ApplicationFormMode = "create" | "edit";
+
+// ApplicationsPage still passes onCreated; new callers should pass onSaved.
+type ApplicationFormSaveProps =
+    | {
+          onSaved: (application: Application) => void;
+          onCreated?: never;
+      }
+    | {
+          /** @deprecated Use onSaved instead. */
+          onCreated: () => void;
+          onSaved?: never;
+      };
+
+type ApplicationFormProps = {
     token: string;
-    onCreated: () => void;
+    mode?: ApplicationFormMode;
+    initialApplication?: Application;
     onCancel: () => void;
+} & ApplicationFormSaveProps;
+
+const DEFAULT_JOB_TYPE: JobType = "FULL_TIME";
+const DEFAULT_STATUS: ApplicationStatus = "WISHLIST";
+
+function toDateInputValue(value: string | null): string {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    // Use local date parts so a date saved by this form round-trips unchanged.
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
 }
 
 const jobTypes: { value: JobType; label: string }[] = [
@@ -42,11 +81,19 @@ const statuses: { value: ApplicationStatus; label: string }[] = [
 
 export default function ApplicationForm({
     token,
+    mode = "create",
+    initialApplication,
+    onSaved,
     onCreated,
     onCancel,
 }: ApplicationFormProps) {
+    const isEditMode = mode === "edit";
+    const applicationToEdit = isEditMode ? initialApplication : undefined;
+
     const [companies, setCompanies] = useState<Company[]>([]);
-    const [companyId, setCompanyId] = useState("");
+    const [companyId, setCompanyId] = useState(
+        applicationToEdit ? String(applicationToEdit.companyId) : "",
+    );
     const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
     const [companyError, setCompanyError] = useState<string | null>(null);
 
@@ -56,14 +103,36 @@ export default function ApplicationForm({
     const [companyLocation, setCompanyLocation] = useState("");
     const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
-    const [position, setPosition] = useState("");
-    const [jobType, setJobType] = useState<JobType>("FULL_TIME");
-    const [jobUrl, setJobUrl] = useState("");
-    const [location, setLocation] = useState("");
-    const [salaryMin, setSalaryMin] = useState("");
-    const [salaryMax, setSalaryMax] = useState("");
-    const [status, setStatus] = useState<ApplicationStatus>("WISHLIST");
-    const [appliedAt, setAppliedAt] = useState("");
+    const [position, setPosition] = useState(
+        applicationToEdit?.position ?? "",
+    );
+    const [jobType, setJobType] = useState<JobType>(
+        applicationToEdit?.jobType ?? DEFAULT_JOB_TYPE,
+    );
+    const [jobUrl, setJobUrl] = useState(
+        applicationToEdit?.jobUrl ?? "",
+    );
+    const [location, setLocation] = useState(
+        applicationToEdit?.location ?? "",
+    );
+    const [salaryMin, setSalaryMin] = useState(
+        applicationToEdit?.salaryMin !== null &&
+            applicationToEdit?.salaryMin !== undefined
+            ? String(applicationToEdit.salaryMin)
+            : "",
+    );
+    const [salaryMax, setSalaryMax] = useState(
+        applicationToEdit?.salaryMax !== null &&
+            applicationToEdit?.salaryMax !== undefined
+            ? String(applicationToEdit.salaryMax)
+            : "",
+    );
+    const [status, setStatus] = useState<ApplicationStatus>(
+        applicationToEdit?.status ?? DEFAULT_STATUS,
+    );
+    const [appliedAt, setAppliedAt] = useState(
+        toDateInputValue(applicationToEdit?.appliedAt ?? null),
+    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -169,6 +238,11 @@ export default function ApplicationForm({
         event.preventDefault();
         setFormError(null);
 
+        if (isEditMode && !applicationToEdit) {
+            setFormError("No application is available to edit.");
+            return;
+        }
+
         if (!companyId) {
             setFormError("Please select a company.");
             return;
@@ -236,14 +310,35 @@ export default function ApplicationForm({
 
         setIsSubmitting(true);
 
+        const failureMessage = isEditMode
+            ? "Unable to update the application."
+            : "Unable to create the application.";
+
         try {
-            await createApplication(token, input);
-            onCreated();
+            let savedApplication: Application;
+
+            if (applicationToEdit) {
+                const response = await updateApplication(
+                    token,
+                    applicationToEdit.id,
+                    input,
+                );
+
+                savedApplication = response.application;
+            } else {
+                const response = await createApplication(token, input);
+
+                savedApplication = response.application;
+            }
+
+            if (onSaved) {
+                onSaved(savedApplication);
+            } else {
+                onCreated?.();
+            }
         } catch (error) {
             setFormError(
-                error instanceof ApiError
-                    ? error.message
-                    : "Unable to create the application.",
+                error instanceof ApiError ? error.message : failureMessage,
             );
         } finally {
             setIsSubmitting(false);
@@ -277,8 +372,16 @@ export default function ApplicationForm({
         <section className="application-form-panel">
             <div className="application-form-heading">
                 <div>
-                    <h2>Add a job application</h2>
-                    <p>Enter the details of the job opportunity.</p>
+                    <h2>
+                        {isEditMode
+                            ? "Edit application"
+                            : "Add a job application"}
+                    </h2>
+                    <p>
+                        {isEditMode
+                            ? "Update the details of this job application."
+                            : "Enter the details of the job opportunity."}
+                    </p>
                 </div>
                 <button
                     type="button"
@@ -325,6 +428,7 @@ export default function ApplicationForm({
                                 setCompanyId(event.target.value)
                             }
                             required
+                            disabled={isSubmitting}
                         >
                             <option value="">Choose a company</option>
                             {companies.map((company) => (
@@ -354,6 +458,7 @@ export default function ApplicationForm({
                                 }
                                 placeholder="e.g. Acme Technologies"
                                 required
+                                disabled={isCreatingCompany}
                             />
                         </div>
 
@@ -369,6 +474,7 @@ export default function ApplicationForm({
                                     setCompanyWebsite(event.target.value)
                                 }
                                 placeholder="https://example.com"
+                                disabled={isCreatingCompany}
                             />
                         </div>
 
@@ -383,6 +489,7 @@ export default function ApplicationForm({
                                     setCompanyLocation(event.target.value)
                                 }
                                 placeholder="e.g. Mumbai, India"
+                                disabled={isCreatingCompany}
                             />
                         </div>
 
@@ -418,6 +525,7 @@ export default function ApplicationForm({
                         onChange={(event) => setPosition(event.target.value)}
                         placeholder="e.g. Frontend Developer"
                         required
+                        disabled={isSubmitting}
                     />
                 </div>
 
@@ -429,6 +537,7 @@ export default function ApplicationForm({
                         onChange={(event) =>
                             setJobType(event.target.value as JobType)
                         }
+                        disabled={isSubmitting}
                     >
                         {jobTypes.map((type) => (
                             <option key={type.value} value={type.value}>
@@ -446,6 +555,7 @@ export default function ApplicationForm({
                         value={jobUrl}
                         onChange={(event) => setJobUrl(event.target.value)}
                         placeholder="https://example.com/jobs/123"
+                        disabled={isSubmitting}
                     />
                 </div>
 
@@ -456,6 +566,7 @@ export default function ApplicationForm({
                         value={location}
                         onChange={(event) => setLocation(event.target.value)}
                         placeholder="e.g. Remote or Mumbai"
+                        disabled={isSubmitting}
                     />
                 </div>
 
@@ -472,6 +583,7 @@ export default function ApplicationForm({
                                 setSalaryMin(event.target.value)
                             }
                             placeholder="e.g. 500000"
+                            disabled={isSubmitting}
                         />
                     </div>
 
@@ -487,6 +599,7 @@ export default function ApplicationForm({
                                 setSalaryMax(event.target.value)
                             }
                             placeholder="e.g. 800000"
+                            disabled={isSubmitting}
                         />
                     </div>
                 </div>
@@ -501,6 +614,7 @@ export default function ApplicationForm({
                                 event.target.value as ApplicationStatus,
                             )
                         }
+                        disabled={isSubmitting}
                     >
                         {statuses.map((item) => (
                             <option key={item.value} value={item.value}>
@@ -517,6 +631,7 @@ export default function ApplicationForm({
                         type="date"
                         value={appliedAt}
                         onChange={(event) => setAppliedAt(event.target.value)}
+                        disabled={isSubmitting}
                     />
                 </div>
 
@@ -541,8 +656,12 @@ export default function ApplicationForm({
                         }
                     >
                         {isSubmitting
-                            ? "Saving application..."
-                            : "Save application"}
+                            ? isEditMode
+                                ? "Saving changes..."
+                                : "Saving application..."
+                            : isEditMode
+                              ? "Save changes"
+                              : "Save application"}
                     </button>
                 </div>
             </form>

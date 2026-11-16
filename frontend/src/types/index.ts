@@ -116,3 +116,36 @@ export interface RegisterResponse {
         createdAt: string;
     };
 }
+
+// Application table pagination metadata.
+
+export interface ApplicationPagination {
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+}
+
+// Supported application sorting options.
+
+export type ApplicationSortField =
+    | "appliedAt"
+    | "company"
+    | "createdAt"
+    | "salaryMax";
+
+export type SortOrder = "asc" | "desc";
+
+// Query parameters supported by GET /applications.
+
+export interface ApplicationQueryParams {
+    page?: number;
+    limit?: 10 | 25 | 50;
+    search?: string;
+    status?: ApplicationStatus;
+    jobType?: JobType;
+    sortBy?: ApplicationSortField;
+    sortOrder?: SortOrder;
+}
