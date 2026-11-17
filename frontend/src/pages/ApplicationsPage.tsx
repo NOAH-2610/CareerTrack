@@ -63,6 +63,9 @@ export default function ApplicationsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
     const [showForm, setShowForm] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [editingApplicationId, setEditingApplicationId] = useState<
+        number | null
+    >(null);
     const [selectedApplicationId, setSelectedApplicationId] = useState<
         number | null
     >(null);
@@ -85,6 +88,19 @@ export default function ApplicationsPage() {
             : applications.find(
                   (application) => application.id === selectedApplicationId,
               ) ?? null;
+
+    const editingApplication =
+        editingApplicationId === null
+            ? null
+            : applications.find(
+                  (application) => application.id === editingApplicationId,
+              ) ?? null;
+
+    // A stale edit ID must not open the form or fall back to create mode.
+    const isCreatingApplication =
+        showForm && editingApplicationId === null;
+    const isFormOpen =
+        isCreatingApplication || editingApplication !== null;
 
     const selectedCompany =
         selectedApplication === null
@@ -340,9 +356,26 @@ export default function ApplicationsPage() {
         setCurrentPage(INITIAL_PAGE);
     }
 
-    function handleApplicationCreated() {
+    function handleNewApplication(): void {
+        setEditingApplicationId(null);
+        setShowForm(true);
+    }
+
+    function handleFormCancel(): void {
         setShowForm(false);
-        setCurrentPage(INITIAL_PAGE);
+        setEditingApplicationId(null);
+    }
+
+    function handleApplicationSaved(): void {
+        const wasEditing = editingApplicationId !== null;
+
+        setShowForm(false);
+        setEditingApplicationId(null);
+
+        if (!wasEditing) {
+            setCurrentPage(INITIAL_PAGE);
+        }
+
         setRefreshKey((current) => current + 1);
         setCompanyRefreshKey((current) => current + 1);
     }
@@ -355,9 +388,10 @@ export default function ApplicationsPage() {
         setSelectedApplicationId(null);
     }
 
-    // Editing is connected in a later milestone.
-    function handleEditPlaceholder(): void {
-        // Intentionally no-op.
+    function handleEditApplication(application: Application): void {
+        setEditingApplicationId(application.id);
+        setShowForm(false);
+        setSelectedApplicationId(null);
     }
 
     function handleDeleteApplication(application: Application): void {
@@ -449,16 +483,28 @@ export default function ApplicationsPage() {
             <main className="applications-page">
                 <ApplicationsHeader
                     applicationCount={totalApplicationCount}
-                    onNewApplication={() => setShowForm(true)}
-                    isFormOpen={showForm}
+                    onNewApplication={handleNewApplication}
+                    isFormOpen={isFormOpen}
                 />
 
-                {showForm && token ? (
-                    <ApplicationForm
-                        token={token}
-                        onCreated={handleApplicationCreated}
-                        onCancel={() => setShowForm(false)}
-                    />
+                {isFormOpen && token ? (
+                    editingApplication ? (
+                        <ApplicationForm
+                            key={`edit-${editingApplication.id}`}
+                            token={token}
+                            mode="edit"
+                            initialApplication={editingApplication}
+                            onSaved={handleApplicationSaved}
+                            onCancel={handleFormCancel}
+                        />
+                    ) : (
+                        <ApplicationForm
+                            key="create"
+                            token={token}
+                            onSaved={handleApplicationSaved}
+                            onCancel={handleFormCancel}
+                        />
+                    )
                 ) : (
                     <>
                         <ApplicationToolbar
@@ -519,7 +565,7 @@ export default function ApplicationsPage() {
                                 applications={applications}
                                 companies={companies}
                                 onRowClick={handleApplicationSelect}
-                                onEdit={handleEditPlaceholder}
+                                onEdit={handleEditApplication}
                                 onDelete={handleDeleteApplication}
                             />
                         )}
@@ -540,7 +586,7 @@ export default function ApplicationsPage() {
                     application={selectedApplication}
                     company={selectedCompany}
                     onClose={handleDrawerClose}
-                    onEdit={handleEditPlaceholder}
+                    onEdit={handleEditApplication}
                     onDelete={handleDeleteApplication}
                 />
 
