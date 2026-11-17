@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useRef,
+    useState,
+    type CSSProperties,
+} from "react";
 
 import { useAuth } from "../auth/authContext";
-import { getApplications } from "../api/applications";
+import { deleteApplication, getApplications } from "../api/applications";
 import { ApiError } from "../api/client";
 import { getCompanies } from "../api/companies";
 import type {
@@ -17,6 +22,7 @@ import type {
 import ApplicationForm from "../components/ApplicationForm";
 import ApplicationDetailDrawer from "../components/applications/ApplicationDetailDrawer";
 import ApplicationPagination from "../components/applications/ApplicationPagination";
+import DeleteApplicationDialog from "../components/applications/DeleteApplicationDialog";
 import ApplicationTable from "../components/applications/ApplicationTable";
 import ApplicationToolbar from "../components/applications/ApplicationToolbar";
 import ApplicationsHeader from "../components/applications/ApplicationsHeader";
@@ -30,6 +36,19 @@ const INITIAL_PAGE_SIZE: PageSize = 10;
 const INITIAL_SORT_BY = "createdAt";
 const INITIAL_SORT_ORDER = "desc";
 const SEARCH_DEBOUNCE_MS = 350;
+
+// The delete dialog is portaled above the page, so its error needs to escape the
+// page flow to remain visible next to the dialog without modifying the dialog.
+const deletionErrorStyle: CSSProperties = {
+    position: "fixed",
+    top: "16px",
+    left: "50%",
+    zIndex: 1100,
+    width: "min(480px, calc(100vw - 32px))",
+    margin: 0,
+    transform: "translateX(-50%)",
+    boxShadow: "0 16px 40px rgb(15 23 42 / 18%)",
+};
 
 export default function ApplicationsPage() {
     const { user, token, logout } = useAuth();
@@ -47,6 +66,14 @@ export default function ApplicationsPage() {
     const [selectedApplicationId, setSelectedApplicationId] = useState<
         number | null
     >(null);
+    const [deletionApplicationId, setDeletionApplicationId] = useState<
+        number | null
+    >(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deletionError, setDeletionError] = useState<string | null>(null);
+
+    const deletionInFlightRef = useRef(false);
+    const isMountedRef = useRef(true);
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [companyError, setCompanyError] = useState<string | null>(null);
@@ -66,6 +93,20 @@ export default function ApplicationsPage() {
                   (company) => company.id === selectedApplication.companyId,
               ) ?? null;
 
+    const deletionApplication =
+        deletionApplicationId === null
+            ? null
+            : applications.find(
+                  (application) => application.id === deletionApplicationId,
+              ) ?? null;
+
+    const deletionCompany =
+        deletionApplication === null
+            ? null
+            : companies.find(
+                  (company) => company.id === deletionApplication.companyId,
+              ) ?? null;
+
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [status, setStatus] = useState<ApplicationStatus | "">("");
@@ -83,6 +124,14 @@ export default function ApplicationsPage() {
             window.clearTimeout(timeoutId);
         };
     }, [search]);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     useEffect(() => {
         let isActive = true;
@@ -306,13 +355,82 @@ export default function ApplicationsPage() {
         setSelectedApplicationId(null);
     }
 
-    // Editing and deletion are connected in later milestones.
+    // Editing is connected in a later milestone.
     function handleEditPlaceholder(): void {
         // Intentionally no-op.
     }
 
-    function handleDeletePlaceholder(): void {
-        // Intentionally no-op.
+    function handleDeleteApplication(application: Application): void {
+        if (deletionInFlightRef.current) {
+            return;
+        }
+
+        setDeletionError(null);
+        setDeletionApplicationId(application.id);
+    }
+
+    function handleDeleteCancel(): void {
+        if (deletionInFlightRef.current) {
+            return;
+        }
+
+        setDeletionApplicationId(null);
+        setDeletionError(null);
+    }
+
+    async function handleDeleteConfirm(
+        application: Application,
+    ): Promise<void> {
+        if (deletionInFlightRef.current) {
+            return;
+        }
+
+        if (deletionApplicationId !== application.id) {
+            return;
+        }
+
+        if (!token) {
+            setDeletionError(
+                "Your session is unavailable. Please log in again.",
+            );
+            return;
+        }
+
+        deletionInFlightRef.current = true;
+        setIsDeleting(true);
+        setDeletionError(null);
+
+        try {
+            await deleteApplication(token, application.id);
+
+            if (!isMountedRef.current) {
+                return;
+            }
+
+            setDeletionApplicationId(null);
+            setRefreshKey((current) => current + 1);
+        } catch (err) {
+            if (!isMountedRef.current) {
+                return;
+            }
+
+            if (err instanceof ApiError && err.status === 401) {
+                logout();
+                return;
+            }
+
+            setDeletionError(
+                err instanceof ApiError
+                    ? `Could not delete application. ${err.message}`
+                    : "Could not delete application. Please try again.",
+            );
+        } finally {
+            deletionInFlightRef.current = false;
+
+            if (isMountedRef.current) {
+                setIsDeleting(false);
+            }
+        }
     }
 
     const totalApplicationCount = pagination?.totalItems ?? 0;
@@ -402,7 +520,7 @@ export default function ApplicationsPage() {
                                 companies={companies}
                                 onRowClick={handleApplicationSelect}
                                 onEdit={handleEditPlaceholder}
-                                onDelete={handleDeletePlaceholder}
+                                onDelete={handleDeleteApplication}
                             />
                         )}
 
@@ -423,9 +541,30 @@ export default function ApplicationsPage() {
                     company={selectedCompany}
                     onClose={handleDrawerClose}
                     onEdit={handleEditPlaceholder}
-                    onDelete={handleDeletePlaceholder}
+                    onDelete={handleDeleteApplication}
+                />
+
+                <DeleteApplicationDialog
+                    isOpen={deletionApplication !== null}
+                    application={deletionApplication}
+                    company={deletionCompany}
+                    onCancel={handleDeleteCancel}
+                    onConfirm={(application) => {
+                        void handleDeleteConfirm(application);
+                    }}
+                    isDeleting={isDeleting}
                 />
             </main>
+
+            {deletionApplication !== null && deletionError && (
+                <p
+                    className="form-error"
+                    role="alert"
+                    style={deletionErrorStyle}
+                >
+                    {deletionError}
+                </p>
+            )}
         </div>
     );
 }
