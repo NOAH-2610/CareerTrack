@@ -468,6 +468,22 @@ export default function ApplicationsPage() {
     }
 
     const totalApplicationCount = pagination?.totalItems ?? 0;
+    const hasActiveFilters =
+        search.length > 0 ||
+        debouncedSearch.length > 0 ||
+        status !== "" ||
+        jobType !== "";
+    const hasNoVisibleResults =
+        !isLoading && !error && applications.length === 0;
+    const totalItems = pagination?.totalItems ?? null;
+    const showFilteredEmptyState =
+        hasNoVisibleResults && hasActiveFilters && totalItems === 0;
+    // Keep the existing empty state when pagination metadata is unavailable so
+    // the page never guesses about the size of the whole account.
+    const showEmptyAccountState =
+        hasNoVisibleResults &&
+        !showFilteredEmptyState &&
+        (totalItems === null || totalItems === 0);
 
     return (
         <div className="applications-layout">
@@ -550,13 +566,30 @@ export default function ApplicationsPage() {
                             </section>
                         )}
 
-                        {!isLoading && !error && applications.length === 0 && (
+                        {showEmptyAccountState && (
                             <section className="applications-message applications-empty">
                                 <h2>No applications yet</h2>
                                 <p>
                                     Your job applications will appear here once
                                     you add your first one.
                                 </p>
+                            </section>
+                        )}
+
+                        {showFilteredEmptyState && (
+                            <section className="applications-message applications-empty applications-no-matches">
+                                <h2>No matching applications</h2>
+                                <p>
+                                    Try adjusting your search or filters to find
+                                    what you're looking for.
+                                </p>
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={handleClearAll}
+                                >
+                                    Clear all filters
+                                </button>
                             </section>
                         )}
 

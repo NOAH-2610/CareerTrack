@@ -32,10 +32,23 @@ const FOCUSABLE_SELECTOR = [
     "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
+// Verified in index.html and main.tsx: React mounts the application here.
+const APPLICATION_ROOT_SELECTOR = "#root";
+
 const openOverlays: symbol[] = [];
 
 let bodyScrollLockCount = 0;
 let previousBodyOverflow: string | null = null;
+
+interface PreservedAttributes {
+    hadInert: boolean;
+    inertValue: string | null;
+    hadAriaHidden: boolean;
+    ariaHiddenValue: string | null;
+}
+
+const overlayElements = new Map<symbol, HTMLElement>();
+const isolatedElements = new Map<HTMLElement, PreservedAttributes>();
 
 function registerOverlay(overlayToken: symbol): void {
     openOverlays.push(overlayToken);
@@ -74,6 +87,116 @@ function unlockBodyScroll(): void {
     if (bodyScrollLockCount === 0 && previousBodyOverflow !== null) {
         document.body.style.overflow = previousBodyOverflow;
         previousBodyOverflow = null;
+    }
+}
+
+function captureAttributes(element: HTMLElement): PreservedAttributes {
+    return {
+        hadInert: element.hasAttribute("inert"),
+        inertValue: element.getAttribute("inert"),
+        hadAriaHidden: element.hasAttribute("aria-hidden"),
+        ariaHiddenValue: element.getAttribute("aria-hidden"),
+    };
+}
+
+function applyIsolation(element: HTMLElement): void {
+    if (isolatedElements.has(element)) {
+        return;
+    }
+
+    isolatedElements.set(element, captureAttributes(element));
+    element.setAttribute("inert", "");
+    element.setAttribute("aria-hidden", "true");
+}
+
+function restoreAttributes(element: HTMLElement): void {
+    const original = isolatedElements.get(element);
+
+    if (!original) {
+        return;
+    }
+
+    isolatedElements.delete(element);
+
+    if (original.hadInert) {
+        element.setAttribute("inert", original.inertValue ?? "");
+    } else {
+        element.removeAttribute("inert");
+    }
+
+    if (original.hadAriaHidden) {
+        element.setAttribute("aria-hidden", original.ariaHiddenValue ?? "");
+    } else {
+        element.removeAttribute("aria-hidden");
+    }
+}
+
+function focusTopmostOverlay(): void {
+    const topmostToken = openOverlays[openOverlays.length - 1];
+    const topmostElement = topmostToken
+        ? overlayElements.get(topmostToken)
+        : undefined;
+
+    if (!topmostElement) {
+        return;
+    }
+
+    const panel = topmostElement.querySelector<HTMLElement>('[role="dialog"]');
+
+    if (!panel) {
+        return;
+    }
+
+    const focusableElements = getFocusableElements(panel);
+    const target = focusableElements[0] ?? panel;
+
+    target.focus({ preventScroll: true });
+}
+
+/**
+ * Recomputes which subtrees must be hidden for the current overlay stack.
+ * The application root is hidden whenever any overlay is open, and every
+ * overlay except the topmost one is hidden from assistive technology.
+ */
+function updateAccessibilityIsolation(): void {
+    const applicationRoot =
+        document.querySelector<HTMLElement>(APPLICATION_ROOT_SELECTOR);
+    const isolatedTargets = new Set<HTMLElement>();
+
+    if (applicationRoot && openOverlays.length > 0) {
+        isolatedTargets.add(applicationRoot);
+    }
+
+    openOverlays.forEach((token, index) => {
+        if (index === openOverlays.length - 1) {
+            return;
+        }
+
+        const element = overlayElements.get(token);
+
+        if (element) {
+            isolatedTargets.add(element);
+        }
+    });
+
+    // Restore first so focus can safely return to a newly accessible subtree.
+    for (const element of Array.from(isolatedElements.keys())) {
+        if (!isolatedTargets.has(element)) {
+            restoreAttributes(element);
+        }
+    }
+
+    for (const element of isolatedTargets) {
+        if (isolatedElements.has(element)) {
+            continue;
+        }
+
+        // Never hide a subtree that currently owns focus.
+        if (element.contains(document.activeElement)) {
+            focusTopmostOverlay();
+        }
+
+        applyIsolation(element);
     }
 }
 
@@ -161,6 +284,7 @@ export default function ApplicationOverlay({
         }
 
         const panel = panelRef.current;
+        const overlayElement = panel?.parentElement ?? null;
         const overlayToken = Symbol("application-overlay");
         const previouslyFocused =
             document.activeElement instanceof HTMLElement
@@ -170,6 +294,10 @@ export default function ApplicationOverlay({
         lockBodyScroll();
         registerOverlay(overlayToken);
 
+        if (overlayElement) {
+            overlayElements.set(overlayToken, overlayElement);
+        }
+
         if (panel) {
             const focusableElements = getFocusableElements(panel);
             const initialFocusTarget =
@@ -177,6 +305,8 @@ export default function ApplicationOverlay({
 
             initialFocusTarget.focus({ preventScroll: true });
         }
+
+        updateAccessibilityIsolation();
 
         function handleKeyDown(event: KeyboardEvent): void {
             if (!isTopmostOverlay(overlayToken)) {
@@ -249,7 +379,9 @@ export default function ApplicationOverlay({
 
             const wasTopmost = unregisterOverlay(overlayToken);
 
+            overlayElements.delete(overlayToken);
             unlockBodyScroll();
+            updateAccessibilityIsolation();
 
             if (wasTopmost) {
                 restoreFocus(previouslyFocused);
@@ -285,6 +417,8 @@ export default function ApplicationOverlay({
     return createPortal(
         <div
             className="application-overlay-backdrop"
+            data-application-overlay=""
+            data-overlay-variant={variant}
             onClick={handleBackdropClick}
         >
             <section
