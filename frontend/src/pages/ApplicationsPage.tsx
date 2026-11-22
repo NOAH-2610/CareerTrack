@@ -211,13 +211,18 @@ export default function ApplicationsPage() {
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => {
+            if (search === debouncedSearch) {
+                return;
+            }
+
             setDebouncedSearch(search);
+            setCurrentPage(INITIAL_PAGE);
         }, SEARCH_DEBOUNCE_MS);
 
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [search]);
+    }, [search, debouncedSearch]);
 
     useEffect(() => {
         isMountedRef.current = true;
@@ -433,7 +438,6 @@ export default function ApplicationsPage() {
 
     function handleSearchChange(value: string): void {
         setSearch(value);
-        setCurrentPage(INITIAL_PAGE);
     }
 
     function handleStatusChange(value: ApplicationStatus | ""): void {
