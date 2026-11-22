@@ -2,7 +2,6 @@ import {
     useEffect,
     useRef,
     useState,
-    type CSSProperties,
 } from "react";
 
 import { useAuth } from "../auth/authContext";
@@ -37,18 +36,56 @@ const INITIAL_SORT_BY = "createdAt";
 const INITIAL_SORT_ORDER = "desc";
 const SEARCH_DEBOUNCE_MS = 350;
 
-// The delete dialog is portaled above the page, so its error needs to escape the
-// page flow to remain visible next to the dialog without modifying the dialog.
-const deletionErrorStyle: CSSProperties = {
-    position: "fixed",
-    top: "16px",
-    left: "50%",
-    zIndex: 1100,
-    width: "min(480px, calc(100vw - 32px))",
-    margin: 0,
-    transform: "translateX(-50%)",
-    boxShadow: "0 16px 40px rgb(15 23 42 / 18%)",
-};
+function isFocusRestoreTarget(
+    element: HTMLElement | null,
+): element is HTMLElement {
+    if (!element || !element.isConnected) {
+        return false;
+    }
+
+    if (
+        element.hidden ||
+        element.getAttribute("aria-disabled") === "true" ||
+        element.matches(":disabled")
+    ) {
+        return false;
+    }
+
+    if (
+        element.closest("[inert]") ||
+        element.closest('[aria-hidden="true"]')
+    ) {
+        return false;
+    }
+
+    return element.getClientRects().length > 0;
+}
+
+function focusFormTarget(
+    trigger: HTMLElement | null,
+    applicationId: number | null,
+    fallback: HTMLElement | null,
+): void {
+    let target: HTMLElement | null = isFocusRestoreTarget(trigger)
+        ? trigger
+        : null;
+
+    if (!target && applicationId !== null) {
+        const tableEditButton = document.querySelector<HTMLButtonElement>(
+            `[data-application-id="${applicationId}"].application-table-action-edit`,
+        );
+
+        if (isFocusRestoreTarget(tableEditButton)) {
+            target = tableEditButton;
+        }
+    }
+
+    if (!target && isFocusRestoreTarget(fallback)) {
+        target = fallback;
+    }
+
+    target?.focus({ preventScroll: true });
+}
 
 export default function ApplicationsPage() {
     const { user, token, logout } = useAuth();
@@ -78,7 +115,13 @@ export default function ApplicationsPage() {
     const deletionInFlightRef = useRef(false);
     const isMountedRef = useRef(true);
     const newApplicationButtonRef = useRef<HTMLButtonElement>(null);
-    const restoreNewApplicationFocusRef = useRef(false);
+    const formTriggerRef = useRef<HTMLElement | null>(null);
+    const formFocusApplicationIdRef = useRef<number | null>(null);
+    const restoreFormFocusRef = useRef(false);
+    const formFocusAfterRefreshRef = useRef<{
+        trigger: HTMLElement | null;
+        applicationId: number | null;
+    } | null>(null);
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [companyError, setCompanyError] = useState<string | null>(null);
@@ -152,15 +195,27 @@ export default function ApplicationsPage() {
     }, []);
 
     useEffect(() => {
-        if (!isFormOpen && restoreNewApplicationFocusRef.current) {
-            restoreNewApplicationFocusRef.current = false;
-
-            const frameId = requestAnimationFrame(() => {
-                newApplicationButtonRef.current?.focus({ preventScroll: true });
-            });
-
-            return () => cancelAnimationFrame(frameId);
+        if (isFormOpen || !restoreFormFocusRef.current) {
+            return;
         }
+
+        restoreFormFocusRef.current = false;
+
+        const trigger = formTriggerRef.current;
+        const applicationId = formFocusApplicationIdRef.current;
+
+        formTriggerRef.current = null;
+        formFocusApplicationIdRef.current = null;
+
+        const frameId = requestAnimationFrame(() => {
+            focusFormTarget(
+                trigger,
+                applicationId,
+                newApplicationButtonRef.current,
+            );
+        });
+
+        return () => cancelAnimationFrame(frameId);
     }, [isFormOpen]);
 
     useEffect(() => {
@@ -207,6 +262,20 @@ export default function ApplicationsPage() {
                             ? null
                             : currentId,
                     );
+
+                    const pendingFocus = formFocusAfterRefreshRef.current;
+
+                    if (pendingFocus) {
+                        formFocusAfterRefreshRef.current = null;
+
+                        requestAnimationFrame(() => {
+                            focusFormTarget(
+                                pendingFocus.trigger,
+                                pendingFocus.applicationId,
+                                newApplicationButtonRef.current,
+                            );
+                        });
+                    }
                 }
 
                 if (!nextPagination) {
@@ -371,7 +440,9 @@ export default function ApplicationsPage() {
     }
 
     function handleNewApplication(): void {
-        restoreNewApplicationFocusRef.current = true;
+        formTriggerRef.current = newApplicationButtonRef.current;
+        formFocusApplicationIdRef.current = null;
+        restoreFormFocusRef.current = true;
         setEditingApplicationId(null);
         setShowForm(true);
     }
@@ -383,6 +454,13 @@ export default function ApplicationsPage() {
 
     function handleApplicationSaved(): void {
         const wasEditing = editingApplicationId !== null;
+
+        if (wasEditing) {
+            formFocusAfterRefreshRef.current = {
+                trigger: formTriggerRef.current,
+                applicationId: formFocusApplicationIdRef.current,
+            };
+        }
 
         setShowForm(false);
         setEditingApplicationId(null);
@@ -404,7 +482,12 @@ export default function ApplicationsPage() {
     }
 
     function handleEditApplication(application: Application): void {
-        restoreNewApplicationFocusRef.current = false;
+        formTriggerRef.current =
+            document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null;
+        formFocusApplicationIdRef.current = application.id;
+        restoreFormFocusRef.current = true;
         setEditingApplicationId(application.id);
         setShowForm(false);
         setSelectedApplicationId(null);
@@ -535,6 +618,7 @@ export default function ApplicationsPage() {
                             token={token}
                             mode="edit"
                             initialApplication={editingApplication}
+                            focusOnOpen
                             onSaved={handleApplicationSaved}
                             onCancel={handleFormCancel}
                         />
@@ -658,18 +742,9 @@ export default function ApplicationsPage() {
                         void handleDeleteConfirm(application);
                     }}
                     isDeleting={isDeleting}
+                    error={deletionError}
                 />
             </main>
-
-            {deletionApplication !== null && deletionError && (
-                <p
-                    className="form-error"
-                    role="alert"
-                    style={deletionErrorStyle}
-                >
-                    {deletionError}
-                </p>
-            )}
         </div>
     );
 }

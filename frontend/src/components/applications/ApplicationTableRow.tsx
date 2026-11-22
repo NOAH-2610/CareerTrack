@@ -191,6 +191,7 @@ export default function ApplicationTableRow({
                             <button
                                 type="button"
                                 className="application-table-action application-table-action-edit"
+                                data-application-id={application.id}
                                 aria-label={`Edit application for ${accessiblePosition} at ${companyName}`}
                                 title="Edit application"
                                 onClick={handleEditClick}

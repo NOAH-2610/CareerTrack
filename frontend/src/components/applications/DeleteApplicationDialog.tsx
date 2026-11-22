@@ -11,6 +11,7 @@ export interface DeleteApplicationDialogProps {
     onCancel: () => void;
     onConfirm: (application: Application) => void;
     isDeleting?: boolean;
+    error?: string | null;
 }
 
 export default function DeleteApplicationDialog({
@@ -20,8 +21,10 @@ export default function DeleteApplicationDialog({
     onCancel,
     onConfirm,
     isDeleting = false,
+    error = null,
 }: DeleteApplicationDialogProps) {
     const descriptionId = useId();
+    const errorId = useId();
 
     if (!application) {
         return null;
@@ -39,7 +42,9 @@ export default function DeleteApplicationDialog({
             onClose={onCancel}
             variant="dialog"
             ariaLabel={`Delete application for ${position} at ${companyName}`}
-            ariaDescribedBy={descriptionId}
+            ariaDescribedBy={
+                error ? `${descriptionId} ${errorId}` : descriptionId
+            }
         >
             <div className="application-delete-dialog">
                 <header className="application-delete-dialog-header">
@@ -66,6 +71,16 @@ export default function DeleteApplicationDialog({
                         {companyName}
                     </p>
                 </div>
+
+                {error && (
+                    <p
+                        id={errorId}
+                        className="application-delete-dialog-error"
+                        role="alert"
+                    >
+                        {error}
+                    </p>
+                )}
 
                 <p
                     className="application-delete-dialog-status"

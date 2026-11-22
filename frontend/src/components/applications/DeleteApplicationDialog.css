@@ -63,6 +63,18 @@
     overflow-wrap: anywhere;
 }
 
+.application-delete-dialog-error {
+    margin: 0;
+    padding: 12px 14px;
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+    border: 1px solid #fecdca;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
 .application-delete-dialog-status {
     position: absolute;
     width: 1px;
