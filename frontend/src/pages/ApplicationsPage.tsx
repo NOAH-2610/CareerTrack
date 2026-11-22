@@ -87,6 +87,35 @@ function focusFormTarget(
     target?.focus({ preventScroll: true });
 }
 
+function focusDeletionTarget(
+    origin: HTMLElement | null,
+    fallback: HTMLElement | null,
+): void {
+    const candidates: (HTMLElement | null)[] = [
+        origin,
+        ...Array.from(
+            document.querySelectorAll<HTMLElement>(
+                ".application-table-row-action, " +
+                    ".application-table-action-edit, " +
+                    ".application-table-action-delete",
+            ),
+        ),
+        ...Array.from(
+            document.querySelectorAll<HTMLElement>(
+                ".application-pagination-button",
+            ),
+        ),
+        fallback,
+    ];
+
+    for (const candidate of candidates) {
+        if (isFocusRestoreTarget(candidate)) {
+            candidate.focus({ preventScroll: true });
+            return;
+        }
+    }
+}
+
 export default function ApplicationsPage() {
     const { user, token, logout } = useAuth();
 
@@ -121,6 +150,10 @@ export default function ApplicationsPage() {
     const formFocusAfterRefreshRef = useRef<{
         trigger: HTMLElement | null;
         applicationId: number | null;
+    } | null>(null);
+    const deletionFocusOriginRef = useRef<HTMLElement | null>(null);
+    const deletionFocusAfterRefreshRef = useRef<{
+        origin: HTMLElement | null;
     } | null>(null);
 
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -272,6 +305,20 @@ export default function ApplicationsPage() {
                             focusFormTarget(
                                 pendingFocus.trigger,
                                 pendingFocus.applicationId,
+                                newApplicationButtonRef.current,
+                            );
+                        });
+                    }
+
+                    const pendingDeletionFocus =
+                        deletionFocusAfterRefreshRef.current;
+
+                    if (pendingDeletionFocus) {
+                        deletionFocusAfterRefreshRef.current = null;
+
+                        requestAnimationFrame(() => {
+                            focusDeletionTarget(
+                                pendingDeletionFocus.origin,
                                 newApplicationButtonRef.current,
                             );
                         });
@@ -498,6 +545,10 @@ export default function ApplicationsPage() {
             return;
         }
 
+        deletionFocusOriginRef.current =
+            document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null;
         setDeletionError(null);
         setDeletionApplicationId(application.id);
     }
@@ -507,6 +558,7 @@ export default function ApplicationsPage() {
             return;
         }
 
+        deletionFocusOriginRef.current = null;
         setDeletionApplicationId(null);
         setDeletionError(null);
     }
@@ -540,6 +592,14 @@ export default function ApplicationsPage() {
                 return;
             }
 
+            deletionFocusAfterRefreshRef.current = {
+                origin: deletionFocusOriginRef.current,
+            };
+            deletionFocusOriginRef.current = null;
+
+            setSelectedApplicationId((currentId) =>
+                currentId === application.id ? null : currentId,
+            );
             setDeletionApplicationId(null);
             setRefreshKey((current) => current + 1);
         } catch (err) {
@@ -725,7 +785,10 @@ export default function ApplicationsPage() {
                 )}
 
                 <ApplicationDetailDrawer
-                    isOpen={selectedApplication !== null}
+                    isOpen={
+                        selectedApplication !== null &&
+                        deletionApplication === null
+                    }
                     application={selectedApplication}
                     company={selectedCompany}
                     onClose={handleDrawerClose}
