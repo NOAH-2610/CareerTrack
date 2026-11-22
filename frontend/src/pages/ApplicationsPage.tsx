@@ -627,6 +627,9 @@ export default function ApplicationsPage() {
     }
 
     const totalApplicationCount = pagination?.totalItems ?? 0;
+    // Pagination is set only after the first successful paginated response, so
+    // this covers the initial load and retries before any list has loaded.
+    const isInitialApplicationLoad = isLoading && pagination === null;
     const hasActiveFilters =
         search.length > 0 ||
         debouncedSearch.length > 0 ||
@@ -717,13 +720,21 @@ export default function ApplicationsPage() {
 
                         {isLoading && (
                             <section className="applications-message">
-                                <p>Loading your applications...</p>
+                                <p
+                                    role={
+                                        isInitialApplicationLoad
+                                            ? "status"
+                                            : undefined
+                                    }
+                                >
+                                    Loading your applications...
+                                </p>
                             </section>
                         )}
 
                         {!isLoading && error && (
                             <section className="applications-message applications-error">
-                                <p>{error}</p>
+                                <p role="alert">{error}</p>
                                 <button
                                     type="button"
                                     className="secondary-button"

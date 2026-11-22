@@ -406,7 +406,7 @@ export default function ApplicationForm({
                 aria-label="Application form"
                 tabIndex={-1}
             >
-                <p>Loading companies...</p>
+                <p role="status">Loading companies...</p>
             </section>
         );
     }
@@ -419,7 +419,9 @@ export default function ApplicationForm({
                 aria-label="Application form"
                 tabIndex={-1}
             >
-                <p className="form-error">{companyError}</p>
+                <p className="form-error" role="alert">
+                    {companyError}
+                </p>
                 <button
                     ref={backButtonRef}
                     type="button"
