@@ -77,6 +77,8 @@ export default function ApplicationsPage() {
 
     const deletionInFlightRef = useRef(false);
     const isMountedRef = useRef(true);
+    const newApplicationButtonRef = useRef<HTMLButtonElement>(null);
+    const restoreNewApplicationFocusRef = useRef(false);
 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [companyError, setCompanyError] = useState<string | null>(null);
@@ -148,6 +150,18 @@ export default function ApplicationsPage() {
             isMountedRef.current = false;
         };
     }, []);
+
+    useEffect(() => {
+        if (!isFormOpen && restoreNewApplicationFocusRef.current) {
+            restoreNewApplicationFocusRef.current = false;
+
+            const frameId = requestAnimationFrame(() => {
+                newApplicationButtonRef.current?.focus({ preventScroll: true });
+            });
+
+            return () => cancelAnimationFrame(frameId);
+        }
+    }, [isFormOpen]);
 
     useEffect(() => {
         let isActive = true;
@@ -357,6 +371,7 @@ export default function ApplicationsPage() {
     }
 
     function handleNewApplication(): void {
+        restoreNewApplicationFocusRef.current = true;
         setEditingApplicationId(null);
         setShowForm(true);
     }
@@ -389,6 +404,7 @@ export default function ApplicationsPage() {
     }
 
     function handleEditApplication(application: Application): void {
+        restoreNewApplicationFocusRef.current = false;
         setEditingApplicationId(application.id);
         setShowForm(false);
         setSelectedApplicationId(null);
@@ -487,6 +503,10 @@ export default function ApplicationsPage() {
 
     return (
         <div className="applications-layout">
+            <a className="applications-skip-link" href="#applications-main">
+                Skip to main content
+            </a>
+
             <ApplicationsSidebar
                 user={user}
                 isCollapsed={isSidebarCollapsed}
@@ -496,11 +516,16 @@ export default function ApplicationsPage() {
                 onLogout={logout}
             />
 
-            <main className="applications-page">
+            <main
+                id="applications-main"
+                className="applications-page"
+                tabIndex={-1}
+            >
                 <ApplicationsHeader
                     applicationCount={totalApplicationCount}
                     onNewApplication={handleNewApplication}
                     isFormOpen={isFormOpen}
+                    newApplicationButtonRef={newApplicationButtonRef}
                 />
 
                 {isFormOpen && token ? (
@@ -517,6 +542,7 @@ export default function ApplicationsPage() {
                         <ApplicationForm
                             key="create"
                             token={token}
+                            focusOnOpen
                             onSaved={handleApplicationSaved}
                             onCancel={handleFormCancel}
                         />

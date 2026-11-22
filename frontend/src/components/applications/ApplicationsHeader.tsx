@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { Link } from "react-router-dom";
 
 import "./ApplicationsHeader.css";
@@ -6,6 +7,7 @@ interface ApplicationsHeaderProps {
     applicationCount: number;
     onNewApplication: () => void;
     isFormOpen?: boolean;
+    newApplicationButtonRef?: Ref<HTMLButtonElement>;
 }
 
 function PlusIcon() {
@@ -30,6 +32,7 @@ export default function ApplicationsHeader({
     applicationCount,
     onNewApplication,
     isFormOpen = false,
+    newApplicationButtonRef,
 }: ApplicationsHeaderProps) {
     const countLabel = `${applicationCount} matching ${
         applicationCount === 1 ? "application" : "applications"
@@ -61,6 +64,7 @@ export default function ApplicationsHeader({
             </div>
 
             <button
+                ref={newApplicationButtonRef}
                 type="button"
                 className="applications-new-button"
                 onClick={onNewApplication}

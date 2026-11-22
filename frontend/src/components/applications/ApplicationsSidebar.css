@@ -84,8 +84,8 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     color: var(--color-muted);
     background: transparent;
@@ -126,7 +126,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 42px;
+    min-height: 44px;
     padding: 9px 12px;
     color: var(--color-muted);
     border-radius: 10px;
@@ -227,7 +227,7 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    min-height: 40px;
+    min-height: 44px;
     padding: 8px 12px;
     color: var(--color-muted);
     background: transparent;
@@ -345,7 +345,7 @@
     .applications-sidebar-nav-link,
     .applications-sidebar-collapsed .applications-sidebar-nav-link {
         justify-content: flex-start;
-        min-height: 38px;
+        min-height: 44px;
         padding: 8px 10px;
     }
 
@@ -372,7 +372,7 @@
 
     .applications-sidebar-logout,
     .applications-sidebar-collapsed .applications-sidebar-logout {
-        min-height: 38px;
+        min-height: 44px;
         padding: 8px;
     }
 

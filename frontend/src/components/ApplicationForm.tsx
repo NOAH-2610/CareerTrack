@@ -1,4 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import {
+    useEffect,
+    useId,
+    useRef,
+    useState,
+    type FormEvent,
+} from "react";
 
 import {
     createApplication,
@@ -36,6 +42,7 @@ type ApplicationFormProps = {
     token: string;
     mode?: ApplicationFormMode;
     initialApplication?: Application;
+    focusOnOpen?: boolean;
     onCancel: () => void;
 } & ApplicationFormSaveProps;
 
@@ -83,6 +90,7 @@ export default function ApplicationForm({
     token,
     mode = "create",
     initialApplication,
+    focusOnOpen = false,
     onSaved,
     onCreated,
     onCancel,
@@ -138,6 +146,13 @@ export default function ApplicationForm({
     const [formError, setFormError] = useState<string | null>(null);
     const [companyFormError, setCompanyFormError] = useState<string | null>(null);
 
+    const headingId = useId();
+    const panelRef = useRef<HTMLElement>(null);
+    const companySelectRef = useRef<HTMLSelectElement>(null);
+    const companyNameRef = useRef<HTMLInputElement>(null);
+    const backButtonRef = useRef<HTMLButtonElement>(null);
+    const hasFocusedOnOpenRef = useRef(false);
+
     useEffect(() => {
         let isActive = true;
 
@@ -173,6 +188,44 @@ export default function ApplicationForm({
             isActive = false;
         };
     }, [token]);
+
+    useEffect(() => {
+        if (!focusOnOpen || hasFocusedOnOpenRef.current) {
+            return;
+        }
+
+        if (isLoadingCompanies) {
+            panelRef.current?.focus({ preventScroll: true });
+            return;
+        }
+
+        if (companyError) {
+            backButtonRef.current?.focus({ preventScroll: true });
+            hasFocusedOnOpenRef.current = true;
+            return;
+        }
+
+        let target: HTMLElement | null = null;
+
+        if (showCompanyForm) {
+            target = companyNameRef.current;
+        } else if (companies.length > 0) {
+            target = companySelectRef.current;
+        }
+
+        if (!target || target.hasAttribute("disabled")) {
+            return;
+        }
+
+        target.focus({ preventScroll: true });
+        hasFocusedOnOpenRef.current = true;
+    }, [
+        focusOnOpen,
+        isLoadingCompanies,
+        companyError,
+        showCompanyForm,
+        companies.length,
+    ]);
 
     async function handleCreateCompany(
         event: FormEvent<HTMLFormElement>,
@@ -347,7 +400,12 @@ export default function ApplicationForm({
 
     if (isLoadingCompanies) {
         return (
-            <section className="application-form-panel">
+            <section
+                ref={panelRef}
+                className="application-form-panel"
+                aria-label="Application form"
+                tabIndex={-1}
+            >
                 <p>Loading companies...</p>
             </section>
         );
@@ -355,9 +413,15 @@ export default function ApplicationForm({
 
     if (companyError) {
         return (
-            <section className="application-form-panel">
+            <section
+                ref={panelRef}
+                className="application-form-panel"
+                aria-label="Application form"
+                tabIndex={-1}
+            >
                 <p className="form-error">{companyError}</p>
                 <button
+                    ref={backButtonRef}
                     type="button"
                     className="secondary-button"
                     onClick={onCancel}
@@ -369,10 +433,15 @@ export default function ApplicationForm({
     }
 
     return (
-        <section className="application-form-panel">
+        <section
+            ref={panelRef}
+            className="application-form-panel"
+            aria-labelledby={headingId}
+            tabIndex={-1}
+        >
             <div className="application-form-heading">
                 <div>
-                    <h2>
+                    <h2 id={headingId}>
                         {isEditMode
                             ? "Edit application"
                             : "Add a job application"}
@@ -422,6 +491,7 @@ export default function ApplicationForm({
                     <div className="form-field">
                         <label htmlFor="companyId">Select company</label>
                         <select
+                            ref={companySelectRef}
                             id="companyId"
                             value={companyId}
                             onChange={(event) =>
@@ -451,6 +521,7 @@ export default function ApplicationForm({
                         <div className="form-field">
                             <label htmlFor="companyName">Company name *</label>
                             <input
+                                ref={companyNameRef}
                                 id="companyName"
                                 value={companyName}
                                 onChange={(event) =>
