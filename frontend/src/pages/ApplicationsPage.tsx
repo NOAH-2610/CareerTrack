@@ -524,6 +524,11 @@ export default function ApplicationsPage() {
         setCompanyRefreshKey((current) => current + 1);
     }
 
+    function handleRetryCompanies(): void {
+        setCompanyError(null);
+        setCompanyRefreshKey((current) => current + 1);
+    }
+
     function handleApplicationSelect(application: Application): void {
         setSelectedApplicationId(application.id);
     }
@@ -717,9 +722,18 @@ export default function ApplicationsPage() {
                         />
 
                         {companyError && !error && (
-                            <p className="applications-warning" role="status">
-                                {companyError}
-                            </p>
+                            <>
+                                <p className="applications-warning" role="status">
+                                    {companyError}
+                                </p>
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={handleRetryCompanies}
+                                >
+                                    Try again
+                                </button>
+                            </>
                         )}
 
                         {isLoading && (
