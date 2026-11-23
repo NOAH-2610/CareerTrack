@@ -39,6 +39,11 @@ export default function DashboardPage() {
                 }
             } catch (err) {
                 if (isActive) {
+                    if (err instanceof ApiError && err.status === 401) {
+                        logout();
+                        return;
+                    }
+
                     setError(
                         err instanceof ApiError
                             ? err.message
@@ -57,7 +62,7 @@ export default function DashboardPage() {
         return () => {
             isActive = false;
         };
-    }, [token, refreshKey]);
+    }, [token, refreshKey, logout]);
 
     return (
         <>

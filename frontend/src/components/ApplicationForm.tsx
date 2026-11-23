@@ -6,6 +6,7 @@ import {
     type FormEvent,
 } from "react";
 
+import { useAuth } from "../auth/authContext";
 import {
     createApplication,
     updateApplication,
@@ -95,6 +96,8 @@ export default function ApplicationForm({
     onCreated,
     onCancel,
 }: ApplicationFormProps) {
+    const { logout } = useAuth();
+
     const isEditMode = mode === "edit";
     const applicationToEdit = isEditMode ? initialApplication : undefined;
 
@@ -277,6 +280,11 @@ export default function ApplicationForm({
             setCompanyWebsite("");
             setCompanyLocation("");
         } catch (error) {
+            if (error instanceof ApiError && error.status === 401) {
+                logout();
+                return;
+            }
+
             setCompanyFormError(
                 error instanceof ApiError
                     ? error.message
