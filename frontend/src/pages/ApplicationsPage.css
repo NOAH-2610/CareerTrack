@@ -228,6 +228,14 @@
     font-weight: 650;
 }
 
+.application-form-section-heading > .text-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
 .company-selection {
     margin-bottom: 28px;
     padding: 20px;

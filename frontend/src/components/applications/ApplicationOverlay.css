@@ -95,6 +95,21 @@
     padding-top: 12px;
 }
 
+.application-overlay-panel-form {
+    width: min(840px, calc(100vw - 32px));
+}
+
+.application-overlay-panel-form .application-overlay-content {
+    padding: 28px;
+}
+
+.application-overlay-panel-form .application-form-panel {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
 @keyframes application-overlay-backdrop-in {
     from {
         opacity: 0;
@@ -149,6 +164,10 @@
 
     .application-overlay-panel-with-close .application-overlay-content {
         padding-top: 8px;
+    }
+
+    .application-overlay-panel-form .application-overlay-content {
+        padding: 20px;
     }
 }
 

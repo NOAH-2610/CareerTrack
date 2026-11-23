@@ -47,6 +47,20 @@ type ApplicationFormProps = {
     onCancel: () => void;
 } & ApplicationFormSaveProps;
 
+type ApplicationFieldErrorKey =
+    | "companyName"
+    | "companyWebsite"
+    | "companyId"
+    | "position"
+    | "jobUrl"
+    | "salaryMin"
+    | "salaryMax"
+    | "salaryRange";
+
+type ApplicationFieldErrors = Partial<
+    Record<ApplicationFieldErrorKey, string>
+>;
+
 const DEFAULT_JOB_TYPE: JobType = "FULL_TIME";
 const DEFAULT_STATUS: ApplicationStatus = "WISHLIST";
 
@@ -148,13 +162,69 @@ export default function ApplicationForm({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
     const [companyFormError, setCompanyFormError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] =
+        useState<ApplicationFieldErrors>({});
 
     const headingId = useId();
+    const errorIdBase = useId();
+    const errorIds: Record<ApplicationFieldErrorKey, string> = {
+        companyName: `${errorIdBase}-company-name`,
+        companyWebsite: `${errorIdBase}-company-website`,
+        companyId: `${errorIdBase}-company-id`,
+        position: `${errorIdBase}-position`,
+        jobUrl: `${errorIdBase}-job-url`,
+        salaryMin: `${errorIdBase}-salary-min`,
+        salaryMax: `${errorIdBase}-salary-max`,
+        salaryRange: `${errorIdBase}-salary-range`,
+    };
     const panelRef = useRef<HTMLElement>(null);
     const companySelectRef = useRef<HTMLSelectElement>(null);
     const companyNameRef = useRef<HTMLInputElement>(null);
     const backButtonRef = useRef<HTMLButtonElement>(null);
     const hasFocusedOnOpenRef = useRef(false);
+
+    function clearFieldErrors(fields: ApplicationFieldErrorKey[]): void {
+        setFieldErrors((current) => {
+            if (!fields.some((field) => field in current)) {
+                return current;
+            }
+
+            const next = { ...current };
+
+            for (const field of fields) {
+                delete next[field];
+            }
+
+            return next;
+        });
+    }
+
+    function fieldErrorAttributes(
+        ...fields: ApplicationFieldErrorKey[]
+    ) {
+        const activeFields = fields.filter((field) => fieldErrors[field]);
+
+        return {
+            "aria-describedby": activeFields.length
+                ? activeFields.map((field) => errorIds[field]).join(" ")
+                : undefined,
+            "aria-invalid": activeFields.length > 0 ? true : undefined,
+        };
+    }
+
+    function renderFieldError(field: ApplicationFieldErrorKey) {
+        const message = fieldErrors[field];
+
+        if (!message) {
+            return null;
+        }
+
+        return (
+            <p className="form-error" id={errorIds[field]} role="alert">
+                {message}
+            </p>
+        );
+    }
 
     useEffect(() => {
         let isActive = true;
@@ -235,9 +305,13 @@ export default function ApplicationForm({
     ) {
         event.preventDefault();
         setCompanyFormError(null);
+        clearFieldErrors(["companyName", "companyWebsite"]);
 
         if (!companyName.trim()) {
-            setCompanyFormError("Company name is required.");
+            setFieldErrors((current) => ({
+                ...current,
+                companyName: "Company name is required.",
+            }));
             return;
         }
 
@@ -252,9 +326,11 @@ export default function ApplicationForm({
                     throw new Error("Invalid protocol");
                 }
             } catch {
-                setCompanyFormError(
-                    "Enter a valid company website beginning with http:// or https://.",
-                );
+                setFieldErrors((current) => ({
+                    ...current,
+                    companyWebsite:
+                        "Enter a valid company website beginning with http:// or https://.",
+                }));
                 return;
             }
         }
@@ -298,6 +374,14 @@ export default function ApplicationForm({
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setFormError(null);
+        clearFieldErrors([
+            "companyId",
+            "position",
+            "jobUrl",
+            "salaryMin",
+            "salaryMax",
+            "salaryRange",
+        ]);
 
         if (isEditMode && !applicationToEdit) {
             setFormError("No application is available to edit.");
@@ -305,12 +389,18 @@ export default function ApplicationForm({
         }
 
         if (!companyId) {
-            setFormError("Please select a company.");
+            setFieldErrors((current) => ({
+                ...current,
+                companyId: "Please select a company.",
+            }));
             return;
         }
 
         if (!position.trim()) {
-            setFormError("Job position is required.");
+            setFieldErrors((current) => ({
+                ...current,
+                position: "Job position is required.",
+            }));
             return;
         }
 
@@ -322,9 +412,11 @@ export default function ApplicationForm({
                     throw new Error("Invalid protocol");
                 }
             } catch {
-                setFormError(
-                    "Enter a valid job URL beginning with http:// or https://.",
-                );
+                setFieldErrors((current) => ({
+                    ...current,
+                    jobUrl:
+                        "Enter a valid job URL beginning with http:// or https://.",
+                }));
                 return;
             }
         }
@@ -332,16 +424,34 @@ export default function ApplicationForm({
         const minSalary = salaryMin.trim() ? Number(salaryMin) : null;
         const maxSalary = salaryMax.trim() ? Number(salaryMax) : null;
 
-        for (const salary of [minSalary, maxSalary]) {
-            if (
-                salary !== null &&
-                (!Number.isSafeInteger(salary) || salary < 0)
-            ) {
-                setFormError(
-                    "Salary values must be non-negative whole numbers.",
-                );
-                return;
-            }
+        const invalidSalaryFields: ApplicationFieldErrorKey[] = [];
+
+        if (
+            minSalary !== null &&
+            (!Number.isSafeInteger(minSalary) || minSalary < 0)
+        ) {
+            invalidSalaryFields.push("salaryMin");
+        }
+
+        if (
+            maxSalary !== null &&
+            (!Number.isSafeInteger(maxSalary) || maxSalary < 0)
+        ) {
+            invalidSalaryFields.push("salaryMax");
+        }
+
+        if (invalidSalaryFields.length > 0) {
+            setFieldErrors((current) => {
+                const next = { ...current };
+
+                for (const field of invalidSalaryFields) {
+                    next[field] =
+                        "Salary values must be non-negative whole numbers.";
+                }
+
+                return next;
+            });
+            return;
         }
 
         if (
@@ -349,9 +459,11 @@ export default function ApplicationForm({
             maxSalary !== null &&
             minSalary > maxSalary
         ) {
-            setFormError(
-                "Minimum salary cannot be greater than maximum salary.",
-            );
+            setFieldErrors((current) => ({
+                ...current,
+                salaryRange:
+                    "Minimum salary cannot be greater than maximum salary.",
+            }));
             return;
         }
 
@@ -488,6 +600,10 @@ export default function ApplicationForm({
                             onClick={() => {
                                 setShowCompanyForm((current) => !current);
                                 setCompanyFormError(null);
+                                clearFieldErrors([
+                                    "companyName",
+                                    "companyWebsite",
+                                ]);
                             }}
                         >
                             {showCompanyForm
@@ -503,10 +619,12 @@ export default function ApplicationForm({
                         <select
                             ref={companySelectRef}
                             id="companyId"
+                            {...fieldErrorAttributes("companyId")}
                             value={companyId}
-                            onChange={(event) =>
-                                setCompanyId(event.target.value)
-                            }
+                            onChange={(event) => {
+                                setCompanyId(event.target.value);
+                                clearFieldErrors(["companyId"]);
+                            }}
                             required
                             disabled={isSubmitting}
                         >
@@ -520,6 +638,7 @@ export default function ApplicationForm({
                                 </option>
                             ))}
                         </select>
+                        {renderFieldError("companyId")}
                     </div>
                 )}
 
@@ -533,14 +652,17 @@ export default function ApplicationForm({
                             <input
                                 ref={companyNameRef}
                                 id="companyName"
+                                {...fieldErrorAttributes("companyName")}
                                 value={companyName}
-                                onChange={(event) =>
-                                    setCompanyName(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setCompanyName(event.target.value);
+                                    clearFieldErrors(["companyName"]);
+                                }}
                                 placeholder="e.g. Acme Technologies"
                                 required
                                 disabled={isCreatingCompany}
                             />
+                            {renderFieldError("companyName")}
                         </div>
 
                         <div className="form-field">
@@ -550,13 +672,16 @@ export default function ApplicationForm({
                             <input
                                 id="companyWebsite"
                                 type="url"
+                                {...fieldErrorAttributes("companyWebsite")}
                                 value={companyWebsite}
-                                onChange={(event) =>
-                                    setCompanyWebsite(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setCompanyWebsite(event.target.value);
+                                    clearFieldErrors(["companyWebsite"]);
+                                }}
                                 placeholder="https://example.com"
                                 disabled={isCreatingCompany}
                             />
+                            {renderFieldError("companyWebsite")}
                         </div>
 
                         <div className="form-field">
@@ -602,12 +727,17 @@ export default function ApplicationForm({
                     <label htmlFor="position">Job position *</label>
                     <input
                         id="position"
+                        {...fieldErrorAttributes("position")}
                         value={position}
-                        onChange={(event) => setPosition(event.target.value)}
+                        onChange={(event) => {
+                            setPosition(event.target.value);
+                            clearFieldErrors(["position"]);
+                        }}
                         placeholder="e.g. Frontend Developer"
                         required
                         disabled={isSubmitting}
                     />
+                    {renderFieldError("position")}
                 </div>
 
                 <div className="form-field">
@@ -633,11 +763,16 @@ export default function ApplicationForm({
                     <input
                         id="jobUrl"
                         type="url"
+                        {...fieldErrorAttributes("jobUrl")}
                         value={jobUrl}
-                        onChange={(event) => setJobUrl(event.target.value)}
+                        onChange={(event) => {
+                            setJobUrl(event.target.value);
+                            clearFieldErrors(["jobUrl"]);
+                        }}
                         placeholder="https://example.com/jobs/123"
                         disabled={isSubmitting}
                     />
+                    {renderFieldError("jobUrl")}
                 </div>
 
                 <div className="form-field">
@@ -659,13 +794,22 @@ export default function ApplicationForm({
                             type="number"
                             min="0"
                             step="1"
+                            {...fieldErrorAttributes(
+                                "salaryMin",
+                                "salaryRange",
+                            )}
                             value={salaryMin}
-                            onChange={(event) =>
-                                setSalaryMin(event.target.value)
-                            }
+                            onChange={(event) => {
+                                setSalaryMin(event.target.value);
+                                clearFieldErrors([
+                                    "salaryMin",
+                                    "salaryRange",
+                                ]);
+                            }}
                             placeholder="e.g. 500000"
                             disabled={isSubmitting}
                         />
+                        {renderFieldError("salaryMin")}
                     </div>
 
                     <div className="form-field">
@@ -675,15 +819,26 @@ export default function ApplicationForm({
                             type="number"
                             min="0"
                             step="1"
+                            {...fieldErrorAttributes(
+                                "salaryMax",
+                                "salaryRange",
+                            )}
                             value={salaryMax}
-                            onChange={(event) =>
-                                setSalaryMax(event.target.value)
-                            }
+                            onChange={(event) => {
+                                setSalaryMax(event.target.value);
+                                clearFieldErrors([
+                                    "salaryMax",
+                                    "salaryRange",
+                                ]);
+                            }}
                             placeholder="e.g. 800000"
                             disabled={isSubmitting}
                         />
+                        {renderFieldError("salaryMax")}
                     </div>
                 </div>
+
+                {renderFieldError("salaryRange")}
 
                 <div className="form-field">
                     <label htmlFor="status">Application status *</label>

@@ -19,6 +19,9 @@ export interface ApplicationOverlayProps {
     children: ReactNode;
     closeOnBackdrop?: boolean;
     showCloseButton?: boolean;
+    autoFocusOnOpen?: boolean;
+    restoreFocusOnClose?: boolean;
+    panelClassName?: string;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -270,6 +273,9 @@ export default function ApplicationOverlay({
     children,
     closeOnBackdrop = true,
     showCloseButton = true,
+    autoFocusOnOpen = true,
+    restoreFocusOnClose = true,
+    panelClassName,
 }: ApplicationOverlayProps) {
     const panelRef = useRef<HTMLElement>(null);
     const onCloseRef = useRef(onClose);
@@ -298,7 +304,7 @@ export default function ApplicationOverlay({
             overlayElements.set(overlayToken, overlayElement);
         }
 
-        if (panel) {
+        if (panel && autoFocusOnOpen) {
             const focusableElements = getFocusableElements(panel);
             const initialFocusTarget =
                 focusableElements[0] ?? panel;
@@ -383,11 +389,11 @@ export default function ApplicationOverlay({
             unlockBodyScroll();
             updateAccessibilityIsolation();
 
-            if (wasTopmost) {
+            if (wasTopmost && restoreFocusOnClose) {
                 restoreFocus(previouslyFocused);
             }
         };
-    }, [isOpen]);
+    }, [autoFocusOnOpen, isOpen, restoreFocusOnClose]);
 
     if (!isOpen) {
         return null;
@@ -404,12 +410,13 @@ export default function ApplicationOverlay({
         }
     }
 
-    const panelClassName = [
+    const composedPanelClassName = [
         "application-overlay-panel",
         `application-overlay-panel-${variant}`,
         showCloseButton
             ? "application-overlay-panel-with-close"
             : "",
+        panelClassName ?? "",
     ]
         .filter(Boolean)
         .join(" ");
@@ -423,7 +430,7 @@ export default function ApplicationOverlay({
         >
             <section
                 ref={panelRef}
-                className={panelClassName}
+                className={composedPanelClassName}
                 role="dialog"
                 aria-modal="true"
                 aria-label={ariaLabel}

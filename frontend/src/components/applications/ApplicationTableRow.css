@@ -68,6 +68,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    min-height: 44px;
+    vertical-align: middle;
     color: var(--color-primary);
     font-weight: 650;
     white-space: nowrap;

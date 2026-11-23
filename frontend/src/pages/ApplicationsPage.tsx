@@ -20,6 +20,7 @@ import type {
 } from "../types";
 import ApplicationForm from "../components/ApplicationForm";
 import ApplicationDetailDrawer from "../components/applications/ApplicationDetailDrawer";
+import ApplicationOverlay from "../components/applications/ApplicationOverlay";
 import ApplicationPagination from "../components/applications/ApplicationPagination";
 import DeleteApplicationDialog from "../components/applications/DeleteApplicationDialog";
 import ApplicationTable from "../components/applications/ApplicationTable";
@@ -339,11 +340,17 @@ export default function ApplicationsPage() {
                 // A page can become invalid after deletions, so fall back to the
                 // last available page and let the effect fetch it again.
                 if (
-                    nextPagination.totalPages > 0 &&
-                    currentPage > nextPagination.totalPages
+                    (nextPagination.totalPages > 0 &&
+                        currentPage > nextPagination.totalPages) ||
+                    (nextPagination.totalPages === 0 &&
+                        currentPage > INITIAL_PAGE)
                 ) {
                     shouldFinishLoading = false;
-                    setCurrentPage(nextPagination.totalPages);
+                    setCurrentPage(
+                        nextPagination.totalPages === 0
+                            ? INITIAL_PAGE
+                            : nextPagination.totalPages,
+                    );
                     return;
                 }
 
@@ -684,25 +691,44 @@ export default function ApplicationsPage() {
                 />
 
                 {isFormOpen && token ? (
-                    editingApplication ? (
-                        <ApplicationForm
-                            key={`edit-${editingApplication.id}`}
-                            token={token}
-                            mode="edit"
-                            initialApplication={editingApplication}
-                            focusOnOpen
-                            onSaved={handleApplicationSaved}
-                            onCancel={handleFormCancel}
-                        />
-                    ) : (
-                        <ApplicationForm
-                            key="create"
-                            token={token}
-                            focusOnOpen
-                            onSaved={handleApplicationSaved}
-                            onCancel={handleFormCancel}
-                        />
-                    )
+                    <ApplicationOverlay
+                        isOpen
+                        onClose={handleFormCancel}
+                        variant="dialog"
+                        ariaLabel={
+                            editingApplication
+                                ? `Edit application for ${
+                                      editingApplication.position.trim() ||
+                                      "Untitled position"
+                                  }`
+                                : "Add a job application"
+                        }
+                        panelClassName="application-overlay-panel-form"
+                        closeOnBackdrop={false}
+                        showCloseButton={false}
+                        autoFocusOnOpen={false}
+                        restoreFocusOnClose={false}
+                    >
+                        {editingApplication ? (
+                            <ApplicationForm
+                                key={`edit-${editingApplication.id}`}
+                                token={token}
+                                mode="edit"
+                                initialApplication={editingApplication}
+                                focusOnOpen
+                                onSaved={handleApplicationSaved}
+                                onCancel={handleFormCancel}
+                            />
+                        ) : (
+                            <ApplicationForm
+                                key="create"
+                                token={token}
+                                focusOnOpen
+                                onSaved={handleApplicationSaved}
+                                onCancel={handleFormCancel}
+                            />
+                        )}
+                    </ApplicationOverlay>
                 ) : (
                     <>
                         <ApplicationToolbar
