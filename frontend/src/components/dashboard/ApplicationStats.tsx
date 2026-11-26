@@ -1,65 +1,42 @@
-import type { Application } from "../../types";
+import type { ApplicationStatusCounts } from "./applicationCounts";
 import StatisticsCard from "./StatisticsCard";
 import "./ApplicationStats.css";
 
 interface ApplicationStatsProps {
-    applications: Application[];
+    counts: ApplicationStatusCounts;
 }
 
-export default function ApplicationStats({
-    applications,
-}: ApplicationStatsProps) {
-    const totalApplications = applications.length;
-
-    const appliedCount = applications.filter(
-        (application) => application.status === "APPLIED",
-    ).length;
-
-    const interviewCount = applications.filter(
-        (application) => application.status === "INTERVIEW",
-    ).length;
-
-    const offerCount = applications.filter(
-        (application) => application.status === "OFFER",
-    ).length;
-
-    const rejectedCount = applications.filter(
-        (application) => application.status === "REJECTED",
-    ).length;
-
+export default function ApplicationStats({ counts }: ApplicationStatsProps) {
     return (
-        <section className="application-stats">
-            <h2>Application Overview</h2>
+        <section
+            className="application-stats"
+            aria-labelledby="application-stats-heading"
+        >
+            <h2 id="application-stats-heading">Application Overview</h2>
 
             <div className="statistics-grid">
                 <StatisticsCard
                     title="Total Applications"
-                    value={totalApplications}
+                    value={counts.total}
                     description="All tracked applications"
                 />
 
                 <StatisticsCard
                     title="Applied"
-                    value={appliedCount}
+                    value={counts.APPLIED}
                     description="Applications submitted"
                 />
 
                 <StatisticsCard
-                    title="Interviews"
-                    value={interviewCount}
+                    title="Interview Stage"
+                    value={counts.INTERVIEW}
                     description="Applications in interview stage"
                 />
 
                 <StatisticsCard
                     title="Offers"
-                    value={offerCount}
+                    value={counts.OFFER}
                     description="Job offers received"
-                />
-
-                <StatisticsCard
-                    title="Rejected"
-                    value={rejectedCount}
-                    description="Applications rejected"
                 />
             </div>
         </section>

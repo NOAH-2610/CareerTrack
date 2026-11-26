@@ -1,49 +1,38 @@
-import type { Application } from "../../types";
+import { applicationStatusOptions } from "../applications/applicationUi";
+import type { ApplicationStatusCounts } from "./applicationCounts";
 import "./StatusOverview.css";
 
 interface StatusOverviewProps {
-    applications: Application[];
+    counts: ApplicationStatusCounts;
 }
 
-const statusOptions: {
-    status: Application["status"];
-    label: string;
-}[] = [
-    { status: "WISHLIST", label: "Wishlist" },
-    { status: "APPLIED", label: "Applied" },
-    { status: "ASSESSMENT", label: "Assessment" },
-    { status: "INTERVIEW", label: "Interview" },
-    { status: "OFFER", label: "Offer" },
-    { status: "REJECTED", label: "Rejected" },
-    { status: "WITHDRAWN", label: "Withdrawn" },
-];
-
-export default function StatusOverview({
-    applications,
-}: StatusOverviewProps) {
-    const totalApplications = applications.length;
-
+export default function StatusOverview({ counts }: StatusOverviewProps) {
     return (
-        <section className="status-overview">
-            <h2>Application Status Overview</h2>
+        <section
+            className="status-overview"
+            aria-labelledby="status-overview-heading"
+        >
+            <h2 id="status-overview-heading">Application Status Overview</h2>
 
-            <div className="status-list">
-                {statusOptions.map(({ status, label }) => {
-                    const count = applications.filter(
-                        (application) => application.status === status,
-                    ).length;
+            {counts.total === 0 && (
+                <p className="status-empty-message" role="status">
+                    No applications tracked yet.
+                </p>
+            )}
 
+            <ul className="status-list">
+                {applicationStatusOptions.map(({ value: status, label }) => {
+                    const count = counts[status];
                     const percentage =
-                        totalApplications > 0
-                            ? (count / totalApplications) * 100
-                            : 0;
+                        counts.total > 0 ? (count / counts.total) * 100 : 0;
+                    const roundedPercentage = Math.round(percentage);
 
                     return (
-                        <div className="status-item" key={status}>
+                        <li className="status-item" key={status}>
                             <div className="status-item-header">
                                 <span>{label}</span>
                                 <span>
-                                    {count} ({percentage.toFixed(0)}%)
+                                    {count} ({roundedPercentage}%)
                                 </span>
                             </div>
 
@@ -51,19 +40,20 @@ export default function StatusOverview({
                                 className="status-progress-track"
                                 role="progressbar"
                                 aria-label={`${label} applications`}
-                                aria-valuenow={percentage}
+                                aria-valuenow={roundedPercentage}
                                 aria-valuemin={0}
                                 aria-valuemax={100}
+                                aria-valuetext={`${label}: ${count} of ${counts.total} applications (${roundedPercentage}%)`}
                             >
                                 <div
                                     className={`status-progress-fill status-${status.toLowerCase()}`}
                                     style={{ width: `${percentage}%` }}
                                 />
                             </div>
-                        </div>
+                        </li>
                     );
                 })}
-            </div>
+            </ul>
         </section>
     );
 }

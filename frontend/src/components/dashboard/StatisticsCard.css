@@ -1,4 +1,5 @@
 .statistics-card {
+    min-width: 0;
     padding: 24px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);

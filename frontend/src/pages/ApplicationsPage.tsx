@@ -25,8 +25,8 @@ import ApplicationPagination from "../components/applications/ApplicationPaginat
 import DeleteApplicationDialog from "../components/applications/DeleteApplicationDialog";
 import ApplicationTable from "../components/applications/ApplicationTable";
 import ApplicationToolbar from "../components/applications/ApplicationToolbar";
+import AppLayout from "../components/layout/AppLayout";
 import ApplicationsHeader from "../components/applications/ApplicationsHeader";
-import ApplicationsSidebar from "../components/applications/ApplicationsSidebar";
 import "./ApplicationsPage.css";
 
 type PageSize = NonNullable<ApplicationQueryParams["limit"]>;
@@ -129,7 +129,6 @@ export default function ApplicationsPage() {
         useState<ApplicationPaginationMeta | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [showForm, setShowForm] = useState(false);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [editingApplicationId, setEditingApplicationId] = useState<
         number | null
     >(null);
@@ -664,205 +663,186 @@ export default function ApplicationsPage() {
         (totalItems === null || totalItems === 0);
 
     return (
-        <div className="applications-layout">
-            <a className="applications-skip-link" href="#applications-main">
-                Skip to main content
-            </a>
-
-            <ApplicationsSidebar
-                user={user}
-                isCollapsed={isSidebarCollapsed}
-                onToggleCollapsed={() =>
-                    setIsSidebarCollapsed((current) => !current)
-                }
-                onLogout={logout}
+        <AppLayout user={user} onLogout={logout} mainId="applications-main">
+            <ApplicationsHeader
+                applicationCount={totalApplicationCount}
+                onNewApplication={handleNewApplication}
+                isFormOpen={isFormOpen}
+                newApplicationButtonRef={newApplicationButtonRef}
             />
 
-            <main
-                id="applications-main"
-                className="applications-page"
-                tabIndex={-1}
-            >
-                <ApplicationsHeader
-                    applicationCount={totalApplicationCount}
-                    onNewApplication={handleNewApplication}
-                    isFormOpen={isFormOpen}
-                    newApplicationButtonRef={newApplicationButtonRef}
-                />
-
-                {isFormOpen && token ? (
-                    <ApplicationOverlay
-                        isOpen
-                        onClose={handleFormCancel}
-                        variant="dialog"
-                        ariaLabel={
-                            editingApplication
-                                ? `Edit application for ${
-                                      editingApplication.position.trim() ||
-                                      "Untitled position"
-                                  }`
-                                : "Add a job application"
-                        }
-                        panelClassName="application-overlay-panel-form"
-                        closeOnBackdrop={false}
-                        showCloseButton={false}
-                        autoFocusOnOpen={false}
-                        restoreFocusOnClose={false}
-                    >
-                        {editingApplication ? (
-                            <ApplicationForm
-                                key={`edit-${editingApplication.id}`}
-                                token={token}
-                                mode="edit"
-                                initialApplication={editingApplication}
-                                focusOnOpen
-                                onSaved={handleApplicationSaved}
-                                onCancel={handleFormCancel}
-                            />
-                        ) : (
-                            <ApplicationForm
-                                key="create"
-                                token={token}
-                                focusOnOpen
-                                onSaved={handleApplicationSaved}
-                                onCancel={handleFormCancel}
-                            />
-                        )}
-                    </ApplicationOverlay>
-                ) : (
-                    <>
-                        <ApplicationToolbar
-                            search={search}
-                            status={status}
-                            jobType={jobType}
-                            sortBy={sortBy}
-                            sortOrder={sortOrder}
-                            onSearchChange={handleSearchChange}
-                            onStatusChange={handleStatusChange}
-                            onJobTypeChange={handleJobTypeChange}
-                            onSortChange={handleSortChange}
-                            onClearSearch={handleClearSearch}
-                            onClearStatus={handleClearStatus}
-                            onClearJobType={handleClearJobType}
-                            onClearAll={handleClearAll}
-                        />
-
-                        {companyError && !error && (
-                            <>
-                                <p className="applications-warning" role="status">
-                                    {companyError}
-                                </p>
-                                <button
-                                    type="button"
-                                    className="secondary-button"
-                                    onClick={handleRetryCompanies}
-                                >
-                                    Try again
-                                </button>
-                            </>
-                        )}
-
-                        {isLoading && (
-                            <section className="applications-message">
-                                <p
-                                    role={
-                                        isInitialApplicationLoad
-                                            ? "status"
-                                            : undefined
-                                    }
-                                >
-                                    Loading your applications...
-                                </p>
-                            </section>
-                        )}
-
-                        {!isLoading && error && (
-                            <section className="applications-message applications-error">
-                                <p role="alert">{error}</p>
-                                <button
-                                    type="button"
-                                    className="secondary-button"
-                                    onClick={() => {
-                                        setRefreshKey((current) => current + 1);
-                                    }}
-                                >
-                                    Try again
-                                </button>
-                            </section>
-                        )}
-
-                        {showEmptyAccountState && (
-                            <section className="applications-message applications-empty">
-                                <h2>No applications yet</h2>
-                                <p>
-                                    Your job applications will appear here once
-                                    you add your first one.
-                                </p>
-                            </section>
-                        )}
-
-                        {showFilteredEmptyState && (
-                            <section className="applications-message applications-empty applications-no-matches">
-                                <h2>No matching applications</h2>
-                                <p>
-                                    Try adjusting your search or filters to find
-                                    what you're looking for.
-                                </p>
-                                <button
-                                    type="button"
-                                    className="secondary-button"
-                                    onClick={handleClearAll}
-                                >
-                                    Clear all filters
-                                </button>
-                            </section>
-                        )}
-
-                        {!isLoading && !error && applications.length > 0 && (
-                            <ApplicationTable
-                                applications={applications}
-                                companies={companies}
-                                onRowClick={handleApplicationSelect}
-                                onEdit={handleEditApplication}
-                                onDelete={handleDeleteApplication}
-                            />
-                        )}
-
-                        {!isLoading && !error && pagination && (
-                            <ApplicationPagination
-                                pagination={pagination}
-                                pageSize={pageSize}
-                                onPageChange={handlePageChange}
-                                onPageSizeChange={handlePageSizeChange}
-                            />
-                        )}
-                    </>
-                )}
-
-                <ApplicationDetailDrawer
-                    isOpen={
-                        selectedApplication !== null &&
-                        deletionApplication === null
+            {isFormOpen && token ? (
+                <ApplicationOverlay
+                    isOpen
+                    onClose={handleFormCancel}
+                    variant="dialog"
+                    ariaLabel={
+                        editingApplication
+                            ? `Edit application for ${
+                                  editingApplication.position.trim() ||
+                                  "Untitled position"
+                              }`
+                            : "Add a job application"
                     }
-                    application={selectedApplication}
-                    company={selectedCompany}
-                    onClose={handleDrawerClose}
-                    onEdit={handleEditApplication}
-                    onDelete={handleDeleteApplication}
-                />
+                    panelClassName="application-overlay-panel-form"
+                    closeOnBackdrop={false}
+                    showCloseButton={false}
+                    autoFocusOnOpen={false}
+                    restoreFocusOnClose={false}
+                >
+                    {editingApplication ? (
+                        <ApplicationForm
+                            key={`edit-${editingApplication.id}`}
+                            token={token}
+                            mode="edit"
+                            initialApplication={editingApplication}
+                            focusOnOpen
+                            onSaved={handleApplicationSaved}
+                            onCancel={handleFormCancel}
+                        />
+                    ) : (
+                        <ApplicationForm
+                            key="create"
+                            token={token}
+                            focusOnOpen
+                            onSaved={handleApplicationSaved}
+                            onCancel={handleFormCancel}
+                        />
+                    )}
+                </ApplicationOverlay>
+            ) : (
+                <>
+                    <ApplicationToolbar
+                        search={search}
+                        status={status}
+                        jobType={jobType}
+                        sortBy={sortBy}
+                        sortOrder={sortOrder}
+                        onSearchChange={handleSearchChange}
+                        onStatusChange={handleStatusChange}
+                        onJobTypeChange={handleJobTypeChange}
+                        onSortChange={handleSortChange}
+                        onClearSearch={handleClearSearch}
+                        onClearStatus={handleClearStatus}
+                        onClearJobType={handleClearJobType}
+                        onClearAll={handleClearAll}
+                    />
 
-                <DeleteApplicationDialog
-                    isOpen={deletionApplication !== null}
-                    application={deletionApplication}
-                    company={deletionCompany}
-                    onCancel={handleDeleteCancel}
-                    onConfirm={(application) => {
-                        void handleDeleteConfirm(application);
-                    }}
-                    isDeleting={isDeleting}
-                    error={deletionError}
-                />
-            </main>
-        </div>
+                    {companyError && !error && (
+                        <>
+                            <p className="applications-warning" role="status">
+                                {companyError}
+                            </p>
+                            <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={handleRetryCompanies}
+                            >
+                                Try again
+                            </button>
+                        </>
+                    )}
+
+                    {isLoading && (
+                        <section className="applications-message">
+                            <p
+                                role={
+                                    isInitialApplicationLoad
+                                        ? "status"
+                                        : undefined
+                                }
+                            >
+                                Loading your applications...
+                            </p>
+                        </section>
+                    )}
+
+                    {!isLoading && error && (
+                        <section className="applications-message applications-error">
+                            <p role="alert">{error}</p>
+                            <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={() => {
+                                    setRefreshKey((current) => current + 1);
+                                }}
+                            >
+                                Try again
+                            </button>
+                        </section>
+                    )}
+
+                    {showEmptyAccountState && (
+                        <section className="applications-message applications-empty">
+                            <h2>No applications yet</h2>
+                            <p>
+                                Your job applications will appear here once
+                                you add your first one.
+                            </p>
+                        </section>
+                    )}
+
+                    {showFilteredEmptyState && (
+                        <section className="applications-message applications-empty applications-no-matches">
+                            <h2>No matching applications</h2>
+                            <p>
+                                Try adjusting your search or filters to find
+                                what you're looking for.
+                            </p>
+                            <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={handleClearAll}
+                            >
+                                Clear all filters
+                            </button>
+                        </section>
+                    )}
+
+                    {!isLoading && !error && applications.length > 0 && (
+                        <ApplicationTable
+                            applications={applications}
+                            companies={companies}
+                            onRowClick={handleApplicationSelect}
+                            onEdit={handleEditApplication}
+                            onDelete={handleDeleteApplication}
+                        />
+                    )}
+
+                    {!isLoading && !error && pagination && (
+                        <ApplicationPagination
+                            pagination={pagination}
+                            pageSize={pageSize}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
+                    )}
+                </>
+            )}
+
+            <ApplicationDetailDrawer
+                isOpen={
+                    selectedApplication !== null &&
+                    deletionApplication === null
+                }
+                application={selectedApplication}
+                company={selectedCompany}
+                onClose={handleDrawerClose}
+                onEdit={handleEditApplication}
+                onDelete={handleDeleteApplication}
+            />
+
+            <DeleteApplicationDialog
+                isOpen={deletionApplication !== null}
+                application={deletionApplication}
+                company={deletionCompany}
+                onCancel={handleDeleteCancel}
+                onConfirm={(application) => {
+                    void handleDeleteConfirm(application);
+                }}
+                isDeleting={isDeleting}
+                error={deletionError}
+            />
+        </AppLayout>
     );
 }

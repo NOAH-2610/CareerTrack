@@ -8,16 +8,30 @@
 }
 
 .status-overview h2 {
-    margin: 0 0 24px;
+    margin: 0 0 16px;
     color: var(--color-text);
     font-size: 20px;
     font-weight: 700;
 }
 
+.status-empty-message {
+    margin: 0 0 16px;
+    color: var(--color-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .status-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.status-item {
+    min-width: 0;
 }
 
 .status-item-header {
@@ -71,8 +85,24 @@
     background: #64748b;
 }
 
+@media (min-width: 768px) {
+    .status-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 600px) {
     .status-overview {
         padding: 18px;
+    }
+
+    .status-list {
+        gap: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .status-progress-fill {
+        transition: none;
     }
 }

@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/authContext";
 import { getApplications } from "../api/applications";
 import { ApiError } from "../api/client";
 import type { Application } from "../types";
 import "./DashboardPage.css";
-import DashboardHeader from "../components/dashboard/DashboardHeader";
+import AppLayout from "../components/layout/AppLayout";
 import WelcomeSection from "../components/dashboard/WelcomeSection";
 import ApplicationStats from "../components/dashboard/ApplicationStats";
 import StatusOverview from "../components/dashboard/StatusOverview";
 import RecentApplications from "../components/dashboard/RecentApplications";
+import { countApplications } from "../components/dashboard/applicationCounts";
 
 export default function DashboardPage() {
     const { user, token, logout } = useAuth();
@@ -17,6 +18,11 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+
+    const applicationCounts = useMemo(
+        () => countApplications(applications),
+        [applications],
+    );
 
     useEffect(() => {
         let isActive = true;
@@ -65,18 +71,15 @@ export default function DashboardPage() {
     }, [token, refreshKey, logout]);
 
     return (
-        <>
-            <DashboardHeader
-                userName={user?.name ?? "User"}
-                onLogout={logout}
-            />
-
-            <main className="dashboard-page">
+        <AppLayout user={user} onLogout={logout} mainId="dashboard-main">
+            <div className="dashboard-page">
                 <WelcomeSection userName={user?.name ?? "User"} />
 
-                <p className="dashboard-user-email">Email: {user?.email}</p>
-
-                {isLoading && <p className="dashboard-loading">Loading your applications...</p>}
+                {isLoading && (
+                    <p className="dashboard-loading" role="status">
+                        Loading your applications...
+                    </p>
+                )}
 
                 {error && (
                     <div className="dashboard-error" role="alert">
@@ -93,14 +96,14 @@ export default function DashboardPage() {
 
                 {!isLoading && !error && (
                     <>
-                        <ApplicationStats applications={applications} />
+                        <ApplicationStats counts={applicationCounts} />
 
-                        <StatusOverview applications={applications} />
+                        <StatusOverview counts={applicationCounts} />
 
                         <RecentApplications applications={applications} />
                     </>
                 )}
-            </main>
-        </>
+            </div>
+        </AppLayout>
     );
 }

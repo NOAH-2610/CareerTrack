@@ -1,9 +1,52 @@
 import { Link } from "react-router-dom";
+
 import type { Application } from "../../types";
+import ApplicationStatusBadge from "../applications/ApplicationStatusBadge";
+import { formatApplicationDate } from "../applications/applicationUi";
 import "./RecentApplications.css";
 
 interface RecentApplicationsProps {
     applications: Application[];
+}
+
+interface RecentApplicationDate {
+    label: "Applied" | "Added" | null;
+    dateTime: string | null;
+    display: string;
+}
+
+function isValidDateValue(value: string | null | undefined): value is string {
+    if (!value) {
+        return false;
+    }
+
+    return !Number.isNaN(new Date(value).getTime());
+}
+
+function getRecentApplicationDate(
+    application: Application,
+): RecentApplicationDate {
+    if (isValidDateValue(application.appliedAt)) {
+        return {
+            label: "Applied",
+            dateTime: application.appliedAt,
+            display: formatApplicationDate(application.appliedAt),
+        };
+    }
+
+    if (isValidDateValue(application.createdAt)) {
+        return {
+            label: "Added",
+            dateTime: application.createdAt,
+            display: formatApplicationDate(application.createdAt),
+        };
+    }
+
+    return {
+        label: null,
+        dateTime: null,
+        display: "—",
+    };
 }
 
 export default function RecentApplications({
@@ -17,59 +60,70 @@ export default function RecentApplications({
         )
         .slice(0, 5);
 
-    function formatDate(date: string) {
-        return new Date(date).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        });
-    }
-
     return (
-        <section className="recent-applications">
+        <section
+            className="recent-applications"
+            aria-labelledby="recent-applications-heading"
+        >
             <div className="recent-applications-header">
-                <h2>Recent Applications</h2>
+                <h2 id="recent-applications-heading">Recent Applications</h2>
 
-                <Link to="/applications">View all</Link>
+                <Link
+                    className="recent-applications-view-all"
+                    to="/applications"
+                >
+                    View all applications
+                </Link>
             </div>
 
             {recentApplications.length === 0 ? (
                 <p className="recent-empty-message">
-                    You haven't added any applications yet.
+                    Applications you add will appear here.
                 </p>
             ) : (
-                <div className="recent-applications-list">
-                    {recentApplications.map((application) => (
-                        <article
-                            className="recent-application-item"
-                            key={application.id}
-                        >
-                            <div className="recent-application-details">
-                                <h3>{application.position}</h3>
+                <ul className="recent-applications-list">
+                    {recentApplications.map((application) => {
+                        const date = getRecentApplicationDate(application);
+                        const position =
+                            application.position.trim() ||
+                            "Untitled position";
+                        const companyName =
+                            application.company?.name?.trim() ||
+                            "Unknown company";
 
-                                <p>
-                                    {application.company?.name ??
-                                        "Unknown company"}
-                                </p>
-                            </div>
+                        return (
+                            <li
+                                className="recent-application-item"
+                                key={application.id}
+                            >
+                                <div className="recent-application-details">
+                                    <h3>{position}</h3>
 
-                            <div className="recent-application-meta">
-                                <span
-                                    className={`recent-status status-${application.status.toLowerCase()}`}
-                                >
-                                    {application.status}
-                                </span>
+                                    <p>{companyName}</p>
+                                </div>
 
-                                <time dateTime={application.createdAt}>
-                                    {formatDate(
-                                        application.appliedAt ??
-                                            application.createdAt,
+                                <div className="recent-application-meta">
+                                    <ApplicationStatusBadge
+                                        status={application.status}
+                                    />
+
+                                    {date.dateTime && date.label ? (
+                                        <time
+                                            className="recent-application-date"
+                                            dateTime={date.dateTime}
+                                        >
+                                            {date.label} {date.display}
+                                        </time>
+                                    ) : (
+                                        <span className="recent-application-date">
+                                            {date.display}
+                                        </span>
                                     )}
-                                </time>
-                            </div>
-                        </article>
-                    ))}
-                </div>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
             )}
         </section>
     );

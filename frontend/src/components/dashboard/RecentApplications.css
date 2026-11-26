@@ -9,6 +9,7 @@
 
 .recent-applications-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
@@ -16,6 +17,7 @@
 }
 
 .recent-applications-header h2 {
+    min-width: 0;
     margin: 0;
     color: var(--color-text);
     font-size: 20px;
@@ -23,6 +25,11 @@
 }
 
 .recent-applications-header a {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    min-height: 44px;
+    padding: 10px 0;
     color: var(--color-primary);
     font-size: 14px;
     font-weight: 600;
@@ -33,9 +40,16 @@
     text-decoration: underline;
 }
 
+.recent-applications-header a:focus-visible {
+    border-radius: 4px;
+}
+
 .recent-applications-list {
     display: flex;
     flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .recent-application-item {
@@ -43,6 +57,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 20px;
+    min-width: 0;
     padding: 18px 0;
     border-bottom: 1px solid var(--color-border);
 }
@@ -56,71 +71,41 @@
     border-bottom: none;
 }
 
+.recent-application-details {
+    min-width: 0;
+}
+
 .recent-application-details h3 {
     margin: 0 0 6px;
     color: var(--color-text);
     font-size: 15px;
     font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
 .recent-application-details p {
     margin: 0;
     color: var(--color-muted);
     font-size: 13px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
 }
 
 .recent-application-meta {
     display: flex;
+    flex: 0 0 auto;
     flex-direction: column;
     align-items: flex-end;
-    gap: 8px;
+    gap: 10px;
+    min-width: 0;
 }
 
-.recent-status {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.recent-status.status-wishlist {
-    color: #475569;
-    background: #f1f5f9;
-}
-
-.recent-status.status-applied {
-    color: #1d4ed8;
-    background: #dbeafe;
-}
-
-.recent-status.status-assessment {
-    color: #6d28d9;
-    background: #ede9fe;
-}
-
-.recent-status.status-interview {
-    color: #0f766e;
-    background: #ccfbf1;
-}
-
-.recent-status.status-offer {
-    color: #15803d;
-    background: #dcfce7;
-}
-
-.recent-status.status-rejected {
-    color: #b91c1c;
-    background: #fee2e2;
-}
-
-.recent-status.status-withdrawn {
-    color: #475569;
-    background: #e2e8f0;
-}
-
-.recent-application-meta time {
+.recent-application-date {
     color: var(--color-muted);
     font-size: 12px;
+    line-height: 1.4;
+    text-align: right;
 }
 
 .recent-empty-message {
@@ -135,6 +120,10 @@
         padding: 18px;
     }
 
+    .recent-applications-header {
+        gap: 8px 16px;
+    }
+
     .recent-application-item {
         align-items: flex-start;
         flex-direction: column;
@@ -145,5 +134,10 @@
         align-items: flex-start;
         flex-direction: row;
         flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    .recent-application-date {
+        text-align: left;
     }
 }
